@@ -1,0 +1,16 @@
+# Logs
+*.log
+server.log
+
+# Freebuff
+.freebuff/
+
+# Node
+node_modules/
+
+# Environment
+.env
+
+# OS
+.DS_Store
+Thumbs.db

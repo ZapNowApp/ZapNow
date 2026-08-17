@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <!-- Dark Theme: ตั้ง data-theme จาก localStorage ก่อน CSS วาด (กันจอวาบ) -->
+  <script>try{(function(){var k="sangkha-theme",ss=localStorage.getItem("sangkha-store-session");if(ss){try{var o=JSON.parse(ss);k="sangkha-theme:store:"+(o&&o.id!=null?o.id:"x")}catch(e){k="sangkha-theme:store"}}else if(localStorage.getItem("sangkha-rider")){k="sangkha-theme:rider:"+localStorage.getItem("sangkha-rider")}else if(localStorage.getItem("sangkha-admin-session")){k="sangkha-theme:admin"}else if(localStorage.getItem("sangkha-customer-session")){k="sangkha-theme:customer:"+localStorage.getItem("sangkha-customer-session")}if(localStorage.getItem(k)==="dark")document.documentElement.setAttribute("data-theme","dark")})()}catch(e){}</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sangkha Partner — เข้าสู่ระบบร้านค้า</title>
+  <link rel="icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles/design-system.css" />
+  <link rel="stylesheet" href="auth.css" />
+</head>
+<body>
+  <!-- ===== หัวหน้า (เหมือนหน้าสมัคร) ===== -->
+  <header class="auth-header">
+    <div class="auth-header-inner">
+      <a class="btn-back" href="index.html" aria-label="กลับหน้าร้าน">←</a>
+      <div>
+        <h1>🏪 Sangkha Partner</h1>
+        <p class="auth-subtitle">เข้าสู่ระบบหลังร้าน — จัดการเมนู รับออเดอร์ ดูรายงาน</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="auth-main">
+    <!-- ===== โลโก้ + ข้อความต้อนรับ ===== -->
+    <div class="auth-hero">
+      <div class="auth-logo" aria-hidden="true">🏪</div>
+      <div class="auth-brand">Sangkha <span>Partner</span></div>
+      <p class="auth-welcome">ยินดีต้อนรับกลับ 👋 กรอกข้อมูลเพื่อเข้าสู่ระบบร้านของคุณ</p>
+    </div>
+
+    <!-- ===== การ์ดล็อกอิน ===== -->
+    <div class="auth-card">
+      <!-- สลับวิธีล็อกอิน -->
+      <div class="auth-tabs" role="tablist" aria-label="วิธีล็อกอิน">
+        <button type="button" class="auth-tab active" data-method="pin" role="tab" aria-selected="true">🔒 PIN</button>
+        <button type="button" class="auth-tab" data-method="otp" role="tab" aria-selected="false">📲 SMS OTP</button>
+      </div>
+
+      <!-- ===== ล็อกอินด้วย PIN (ระบบเดิม) ===== -->
+      <div id="method-pin" class="method-panel">
+        <div id="login-phone-field"></div>
+        <div id="login-pin-field"></div>
+        <div id="login-btn-mount"></div>
+      </div>
+
+      <!-- ===== ล็อกอินด้วย SMS OTP (จำลอง) ===== -->
+      <div id="method-otp" class="method-panel" hidden>
+        <div id="otp-phone-field"></div>
+
+        <div class="form-group">
+          <label for="otp-code">📲 รหัสยืนยัน 6 หลัก</label>
+          <div class="otp-row">
+            <input id="otp-code" type="text" maxlength="6" inputmode="numeric"
+                   class="otp-code-input" placeholder="— — — — — —" aria-label="รหัส OTP 6 หลัก" disabled />
+            <button id="otp-send" type="button" class="otp-send-btn">ส่งรหัส</button>
+          </div>
+          <p id="otp-status" class="otp-status"></p>
+        </div>
+
+        <div id="otp-login-mount"></div>
+      </div>
+
+      <div class="auth-links">
+        <button id="forgot-btn" type="button" class="auth-link">ลืมรหัสผ่าน?</button>
+        <a href="index.html" class="auth-link">กลับหน้าหลัก</a>
+      </div>
+    </div>
+
+    <p class="auth-switch">ยังไม่มีร้านค้า? <a href="signup.html">สมัครร้านค้า</a></p>
+  </main>
+
+  <!-- ===== โมดัลลืมรหัสผ่าน ===== -->
+  <div id="forgot-modal" class="modal-backdrop" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="forgot-title">
+      <h3 id="forgot-title">🔑 ลืมรหัสผ่าน?</h3>
+      <p>PIN ของร้านถูกตั้งตอนสมัคร (ค่าเริ่มต้น <b>1234</b>) และแอดมินของแพลตฟอร์มเป็นคนรีเซ็ตได้เท่านั้น</p>
+      <p>กรุณาติดต่อผู้ดูแลระบบเพื่อตั้ง PIN ใหม่ หรือกด <b>สมัครร้านค้า</b> หากยังไม่มีบัญชี</p>
+      <div class="modal-actions">
+        <a href="admin.html" class="btn-ghost">ไปหน้าผู้ดูแล</a>
+        <button id="forgot-close" type="button" class="btn-primary">รับทราบ</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="components/ui.js"></script>
+  <script>
+    (function () {
+      // Shared Components (เก็บ id/class เดิมครบ — login.js/auth.js ยังทำงานเหมือนเดิม)
+      UI.mount("#login-phone-field", UI.Input({
+        label: "📱 เบอร์โทร / ชื่อร้าน",
+        id: "login-phone", fieldClass: "form-group", className: "auth-input",
+        type: "text", maxlength: 40, inputmode: "text",
+        placeholder: "เบอร์โทรศัพท์ร้าน หรือชื่อร้าน", autocomplete: "username"
+      }));
+      UI.mount("#login-pin-field", UI.Input({
+        label: "🔒 PIN / รหัสผ่าน",
+        labelSuffix: '<small>ร้านพื้นฐานเริ่มต้น 1234</small>',
+        id: "login-pin", fieldClass: "form-group", className: "auth-input", wrapClass: "auth-pin-wrap",
+        type: "password", maxlength: 10, inputmode: "numeric",
+        placeholder: "PIN ร้าน", autocomplete: "current-password",
+        suffix: '<button id="toggle-pin" type="button" class="auth-eye" aria-label="แสดง/ซ่อน PIN">👁️</button>'
+      }));
+      UI.mount("#login-btn-mount", UI.Button({
+        id: "login-btn", type: "button", variant: "primary", block: true, legacy: true,
+        label: "เข้าสู่ระบบ"
+      }));
+      UI.mount("#otp-phone-field", UI.Input({
+        label: "📱 เบอร์โทรร้าน", labelSuffix: '<small>เบอร์ที่สมัครไว้กับร้าน</small>',
+        id: "otp-phone", fieldClass: "form-group", className: "auth-input",
+        type: "tel", maxlength: 10, inputmode: "numeric",
+        placeholder: "เช่น 0812345678", autocomplete: "tel"
+      }));
+      UI.mount("#otp-login-mount", UI.Button({
+        id: "otp-login-btn", type: "button", variant: "primary", block: true, legacy: true, disabled: true,
+        label: "ยืนยันและเข้าสู่ระบบ"
+      }));
+    })();
+  </script>
+  <script src="firebase-config.js"></script>
+  <script src="firebase-lib.js"></script>
+  <script src="menu-data.js"></script>
+  <script src="components/ui.js"></script>
+  <script src="auth.js"></script>
+  <script src="login.js"></script>
+</body>
+</html>

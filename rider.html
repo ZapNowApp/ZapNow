@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <!-- Dark Theme: ตั้ง data-theme จาก localStorage ก่อน CSS วาด (กันจอวาบ) -->
+  <script>try{(function(){var k="sangkha-theme",ss=localStorage.getItem("sangkha-store-session");if(ss){try{var o=JSON.parse(ss);k="sangkha-theme:store:"+(o&&o.id!=null?o.id:"x")}catch(e){k="sangkha-theme:store"}}else if(localStorage.getItem("sangkha-rider")){k="sangkha-theme:rider:"+localStorage.getItem("sangkha-rider")}else if(localStorage.getItem("sangkha-admin-session")){k="sangkha-theme:admin"}else if(localStorage.getItem("sangkha-customer-session")){k="sangkha-theme:customer:"+localStorage.getItem("sangkha-customer-session")}if(localStorage.getItem(k)==="dark")document.documentElement.setAttribute("data-theme","dark")})()}catch(e){}</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>🛵 Rider Dashboard</title>
+  <link rel="icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Design System กลาง (โหลดก่อน CSS หน้าเสมอ) -->
+  <link rel="stylesheet" href="styles/design-system.css" />
+  <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="rider.css" />
+</head>
+<body>
+  <!-- ===== แถบบน (AppBar — Shared Component) ===== -->
+  <div id="ds-header-mount"></div>
+
+  <main class="app-main ds-page-pad">
+
+    <!-- ================= หน้าหลัก ================= -->
+    <section id="page-home" class="page active">
+      <!-- การ์ดสรุปไรเดอร์ (UserCard — Shared Component) -->
+      <div id="ds-hero-mount"></div>
+
+      <!-- ปุ่มลัด -->
+      <div id="ds-cta-mount" class="ds-row" style="margin-top:14px"></div>
+
+      <!-- Action Cards (Shared Component) -->
+      <h3 class="ds-section-title">เมนูหลัก</h3>
+      <div id="ds-actions-mount" class="ds-grid-4" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"></div>
+
+      <!-- อัปเดตล่าสุด -->
+      <div class="home-latest-head">
+        <h3 class="ds-section-title">อัปเดตล่าสุด</h3>
+        <button type="button" class="link-btn" data-go="orders">ดูทั้งหมด →</button>
+      </div>
+      <div id="rider-home-latest" class="home-latest"></div>
+    </section>
+
+    <!-- ================= หน้างาน (dashboard เดิม — รับงาน/กำลังส่ง) ================= -->
+    <section id="page-orders" class="page">
+      <!-- เข้าสู่ระบบไรเดอร์ (เห็นเฉพาะงาน/กระเป๋าของตัวเอง) -->
+      <div class="dash-restaurant-bar rider-name-bar">
+        <div id="rider-login" class="rider-login">
+          <label for="rider-name">เข้าสู่ระบบ / ลงทะเบียนไรเดอร์</label>
+          <div class="rider-register-row">
+            <input id="rider-name" type="text" maxlength="20" placeholder="ชื่อไรเดอร์" />
+            <input id="rider-phone" type="tel" maxlength="13" placeholder="เบอร์โทร" />
+            <button id="rider-login-btn" type="button">🚪 เข้าสู่ระบบ</button>
+            <button id="rider-register" type="button">＋ ลงทะเบียน</button>
+          </div>
+          <p class="rider-login-hint">ล็อกอินด้วยชื่อ + เบอร์ของตัวเอง (หรือ ＋ ลงทะเบียนถ้ายังไม่มี) — เห็นเฉพาะงานและกระเป๋าเงินของตัวเอง ไรเดอร์คนอื่นมองไม่เห็นหน้านี้</p>
+        </div>
+        <div id="rider-active" class="rider-active" hidden>
+          <label>กำลังทำงานเป็น</label>
+          <b id="rider-active-name">—</b>
+          <button id="rider-logout" type="button">🚪 ออกจากระบบ</button>
+        </div>
+      </div>
+
+      <!-- สถิติ (StatisticCard — Shared Component) -->
+      <div id="ds-stats-mount" class="ds-grid-4"></div>
+
+      <!-- แท็บ -->
+      <nav class="status-tabs" id="rider-tabs" aria-label="กรองงานไรเดอร์">
+        <button class="status-tab active" data-filter="ready">🛵 รอรับงาน</button>
+        <button class="status-tab" data-filter="mine">📦 กำลังส่งของฉัน</button>
+        <button class="status-tab" data-filter="done">✅ ส่งแล้ว</button>
+      </nav>
+
+      <!-- กรองประวัติตามเดือน (แท็บ ส่งแล้ว) -->
+      <div id="done-filter-bar" class="done-filter-bar" hidden>
+        <select id="done-month" aria-label="กรองประวัติตามเดือน"></select>
+        <span id="done-summary" class="done-summary"></span>
+        <button id="done-slip-btn" type="button" class="done-slip-btn" title="ส่งสลิปสรุปงาน + รายได้ + ภาษีหัก ณ ที่จ่าย ไปทางอีเมล">📧 ส่งสลิปรายเดือน</button>
+      </div>
+
+      <!-- รายการงาน -->
+      <div id="rider-list" class="order-list"></div>
+      <p id="rider-empty" class="empty-state" hidden></p>
+    </section>
+
+    <!-- ================= หน้ารายได้ ================= -->
+    <section id="page-earnings" class="page">
+      <h2 class="ds-section-title">💰 รายได้ของฉัน</h2>
+
+      <!-- กระเป๋าเงินไรเดอร์ -->
+      <section class="rider-wallet" id="rider-wallet" hidden>
+        <div class="rider-wallet-head">
+          <b>💰 กระเป๋าเงิน</b>
+          <span class="rider-wallet-live">รายได้จากการส่งอาหาร</span>
+        </div>
+        <div class="rider-wallet-stats">
+          <div class="wallet-stat"><span>รายได้สะสม</span><b id="wallet-earned">฿0</b></div>
+          <div class="wallet-stat"><span>เบิกไปแล้ว</span><b id="wallet-withdrawn">฿0</b></div>
+          <div class="wallet-stat"><span>เบิกได้ (คงเหลือ)</span><b id="wallet-available">฿0</b></div>
+        </div>
+        <div class="rider-wallet-actions">
+          <input id="wallet-amount" type="number" min="1" step="1" placeholder="จำนวนเงินที่เบิก (บาท)" inputmode="numeric" />
+          <button id="wallet-withdraw" type="button">💸 เบิกถอน</button>
+        </div>
+        <div class="rider-wallet-history">
+          <b>🧾 ประวัติการเบิก</b>
+          <div id="wallet-history" class="wallet-history-list"></div>
+        </div>
+      </section>
+
+      <!-- ประวัติงาน (สรุปตามเดือน) -->
+      <h3 class="ds-section-title">📜 ประวัติงาน</h3>
+      <div id="rider-earnings-history" class="earnings-history"></div>
+    </section>
+
+    <!-- ================= หน้าโปรไฟล์ ================= -->
+    <section id="page-profile" class="page">
+      <div id="ds-prof-mount"></div>
+
+      <!-- โปรไฟล์ไรเดอร์ (ของตัวเองเท่านั้น) -->
+      <section class="rider-profile" id="rider-profile" hidden>
+        <div class="rider-wallet-head">
+          <b>👤 ข้อมูลไรเดอร์</b>
+          <span class="rider-wallet-live">สถิติรวมของคุณ</span>
+        </div>
+        <div class="rider-profile-rows">
+          <div class="rider-profile-row"><span>ชื่อ</span>
+            <span class="profile-phone-wrap">
+              <b id="profile-name">—</b>
+              <button id="profile-edit-name" type="button">✏️ แก้ไข</button>
+            </span>
+          </div>
+          <div class="rider-profile-row"><span>เบอร์โทร</span>
+            <span class="profile-phone-wrap">
+              <b id="profile-phone">—</b>
+              <button id="profile-edit-phone" type="button">✏️ แก้ไข</button>
+            </span>
+          </div>
+          <div class="rider-profile-row"><span>อีเมล (รับสลิป)</span>
+            <span class="profile-phone-wrap">
+              <b id="profile-email">—</b>
+              <button id="profile-edit-email" type="button">✏️ แก้ไข</button>
+            </span>
+          </div>
+          <div class="rider-profile-row"><span>สมัครเมื่อ</span><b id="profile-joined">—</b></div>
+          <div class="rider-profile-row"><span>ส่งแล้วทั้งหมด</span><b id="profile-delivered">0 งาน</b></div>
+          <div class="rider-profile-row"><span>รายได้รวม</span><b id="profile-earned">฿0</b></div>
+        </div>
+        <div id="profile-name-edit" class="profile-edit" hidden>
+          <input id="profile-name-input" type="text" maxlength="20" placeholder="ชื่อใหม่" />
+          <button id="profile-name-save" type="button">💾 บันทึก</button>
+          <button id="profile-name-cancel" type="button">ยกเลิก</button>
+        </div>
+        <div id="profile-phone-edit" class="profile-edit" hidden>
+          <input id="profile-phone-input" type="tel" maxlength="13" placeholder="เบอร์โทรใหม่" />
+          <button id="profile-phone-save" type="button">💾 บันทึก</button>
+          <button id="profile-phone-cancel" type="button">ยกเลิก</button>
+        </div>
+        <div id="profile-email-edit" class="profile-edit" hidden>
+          <input id="profile-email-input" type="email" maxlength="60" placeholder="อีเมลสำหรับรับสลิป เช่น rider@example.com" />
+          <button id="profile-email-save" type="button">💾 บันทึก</button>
+          <button id="profile-email-cancel" type="button">ยกเลิก</button>
+        </div>
+      </section>
+
+      <h3 class="ds-section-title">ตั้งค่า</h3>
+      <div class="prof-actions">
+        <button type="button" class="prof-action" id="prof-online-toggle"><svg class="pa-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.7 5.2 19 10.5"/><path d="M4.2 19.8 13.7 10.3"/><circle cx="17.6" cy="6.4" r="2.6"/></svg> เปลี่ยนสถานะออนไลน์ <span>→</span></button>
+        <button type="button" class="prof-action" id="rider-logout2"><svg class="pa-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4.5h4V19.5h-4"/><path d="M9.5 8 5 12l4.5 4"/><path d="M5.5 12H15"/></svg> ออกจากระบบ <span>→</span></button>
+      </div>
+    </section>
+
+    <!-- ================= หน้าตั้งค่า ================= -->
+    <section id="page-settings" class="page">
+      <h2 class="ds-section-title">⚙️ ตั้งค่า</h2>
+      <div class="prof-card settings-card">
+        <div class="settings-row">
+          <div>
+            <b id="settings-online-label">สถานะออนไลน์</b>
+            <small id="settings-online-desc">พร้อมรับงานใหม่ทันที</small>
+          </div>
+          <button type="button" class="switch-btn" id="settings-online-toggle" role="switch" aria-checked="false" aria-label="สลับสถานะออนไลน์"><span class="switch-knob"></span></button>
+        </div>
+      </div>
+      <div class="prof-actions settings-actions">
+        <button type="button" class="prof-action" id="settings-logout"><svg class="pa-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4.5h4V19.5h-4"/><path d="M9.5 8 5 12l4.5 4"/><path d="M5.5 12H15"/></svg> ออกจากระบบ <span>→</span></button>
+        <button type="button" class="prof-action" data-go="home"><svg class="pa-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11 12 3.5 20.5 11"/><path d="M5.5 9.8V20h13V9.8"/><path d="M10 20v-5.2h4V20"/></svg> กลับหน้าหลัก <span>→</span></button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== แถบล่าง (BottomNav — Shared Component) ===== -->
+  <div id="ds-nav-mount"></div>
+
+  <!-- ===== แผนที่นำทางไรเดอร์ ===== -->
+  <div id="rider-map-overlay" class="rider-map-overlay" hidden></div>
+  <div id="rider-map-modal" class="rider-map-modal" hidden role="dialog" aria-modal="true" aria-labelledby="rider-map-title">
+    <div class="rider-map-head">
+      <h2 id="rider-map-title">🗺️ แผนที่นำทาง</h2>
+      <button id="rider-map-close" class="rider-map-close" aria-label="ปิดแผนที่">✕</button>
+    </div>
+    <div class="rider-map-body">
+      <div class="rider-map-switch" role="tablist" aria-label="เลือกแผนที่">
+        <button type="button" id="map-tab-pickup" class="active" role="tab" aria-selected="true">🏪 ไปรับของที่ร้าน</button>
+        <button type="button" id="map-tab-drop" role="tab" aria-selected="false">🏠 ไปส่งลูกค้า</button>
+      </div>
+      <div class="rider-map-wrap">
+        <div id="rider-map-leaflet" class="rider-map-leaflet" aria-label="แผนที่นำทางจริง (OpenStreetMap)"></div>
+        <p id="rider-map-eta" class="rider-map-eta"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== สลิปรายเดือน (สรุปงาน + รายได้ + ภาษีหัก ณ ที่จ่าย) ===== -->
+  <div id="slip-overlay" class="rider-map-overlay" hidden></div>
+  <div id="slip-modal" class="rider-map-modal slip-modal" hidden role="dialog" aria-modal="true" aria-labelledby="slip-title">
+    <div class="rider-map-head">
+      <h2 id="slip-title">🧾 สลิปรายเดือน</h2>
+      <button id="slip-close" class="rider-map-close" aria-label="ปิดสลิป">✕</button>
+    </div>
+    <div class="rider-map-body">
+      <div id="slip-body" class="slip-body"></div>
+      <div class="slip-send">
+        <input id="slip-email" type="email" maxlength="60" placeholder="อีเมลผู้รับสลิป" aria-label="อีเมลผู้รับสลิป" />
+        <button id="slip-send-btn" type="button">📧 ส่งอีเมล</button>
+        <button id="slip-copy-btn" type="button">📋 คัดลอก</button>
+      </div>
+      <p class="slip-note">กด "ส่งอีเมล" จะเปิดโปรแกรมอีเมลของคุณพร้อมข้อความสรุปยอด (หรือกด "คัดลอก" วางลงอีเมล/แชทเองได้) — อีเมลถูกจำไว้ให้ครั้งถัดไป</p>
+    </div>
+  </div>
+
+  <!-- ===== แจ้งเตือน ===== -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="components/ui.js"></script>
+  <!-- Render Shared Components (เก็บ id เดิมครบ — rider.js/rider-ui.js ยังทำงานเหมือนเดิม) -->
+  <script>
+    (function () {
+      // AppHeader
+      UI.mount("#ds-header-mount", UI.AppHeader({
+        back: true, backHref: "admin.html",
+        logo: "🛵",
+        title: "🛵 Rider Dashboard", titleId: "app-bar-name",
+        subtitle: "รับอาหารจากร้าน แล้วส่งถึงมือลูกค้า — ออเดอร์พร้อมส่งจะแจ้งเตือนทันที", subtitleId: "rider-subtitle",
+        live: true, liveText: "รับงานสด"
+      }));
+
+      // UserCard — สรุปไรเดอร์
+      UI.mount("#ds-hero-mount", UI.UserCard({
+        hero: true,
+        avatarImg: "images/no-avatar.png", avatarId: "rider-avatar",
+        name: "—", nameId: "rider-home-name",
+        subtitle: "—", subtitleId: "rider-home-phone",
+        badge: { text: "—", tone: "muted", id: "rider-home-status", dot: false },
+        extraBadge: { text: "★ 5.0", tone: "rider", id: "rider-home-rating", dot: false },
+        stats: [
+          { value: "฿0", label: "รายได้วันนี้", id: "rider-home-earn" },
+          { value: "0", label: "งานวันนี้", id: "rider-home-jobs" }
+        ]
+      }));
+
+      // ปุ่มลัด
+      UI.mount("#ds-cta-mount",
+        UI.Button({ label: "ดูงาน", variant: "primary", data: [{ k: "go", v: "orders" }], icon: UI.ICONS.orders.replace('<svg', '<svg class="ds-btn-icon"') }) +
+        UI.Button({ label: "🟢 เปลี่ยนสถานะ", variant: "secondary", id: "rider-home-online" })
+      );
+
+      // Action Cards
+      UI.mount("#ds-actions-mount",
+        UI.ActionCard({ iconKey: "orders", title: "รับงาน", desc: "ดูงานพร้อมส่งใกล้ตัว", data: [{ k: "go", v: "orders" }] }) +
+        UI.ActionCard({ iconKey: "riders", title: "งานของฉัน", desc: "กำลังส่ง · ส่งแล้ว", data: [{ k: "go", v: "orders" }, { k: "filter", v: "mine" }] }) +
+        UI.ActionCard({ iconKey: "wallet", title: "รายได้", desc: "กระเป๋าเงิน · เบิกถอน", data: [{ k: "go", v: "earnings" }] }) +
+        UI.ActionCard({ iconKey: "map", title: "แผนที่", desc: "นำทางไปร้าน / ไปส่ง", id: "rider-home-map" }) +
+        UI.ActionCard({ iconKey: "history", title: "ประวัติงาน", desc: "งานที่ส่งแล้ว · สลิปเดือน", data: [{ k: "go", v: "orders" }, { k: "filter", v: "done" }] }) +
+        UI.ActionCard({ iconKey: "profile", title: "โปรไฟล์", desc: "ข้อมูลไรเดอร์ของฉัน", data: [{ k: "go", v: "profile" }] }) +
+        UI.ActionCard({ iconKey: "settings", title: "ตั้งค่า", desc: "สถานะออนไลน์ · ออกจากระบบ", data: [{ k: "go", v: "settings" }] })
+      );
+
+      // สถิติหน้างาน
+      UI.mount("#ds-stats-mount",
+        UI.StatisticCard({ value: "0", label: "รอรับงาน", tone: "rider", valueId: "rider-stat-ready" }) +
+        UI.StatisticCard({ value: "0", label: "กำลังส่งของฉัน", tone: "rider", valueId: "rider-stat-delivering" }) +
+        UI.StatisticCard({ value: "0", label: "ส่งแล้ววันนี้", valueId: "rider-stat-done" }) +
+        UI.StatisticCard({ value: "฿0", label: "รายได้วันนี้", tone: "accent", valueId: "rider-stat-earn" })
+      );
+
+      // โปรไฟล์
+      UI.mount("#ds-prof-mount", UI.UserCard({
+        hero: true,
+        avatarImg: "images/no-avatar.png", avatarId: "prof-avatar",
+        name: "—", nameId: "prof-name",
+        subtitle: "—", subtitleId: "prof-phone",
+        badge: { text: "—", tone: "muted", id: "prof-status", dot: false }
+      }));
+
+      // BottomNav
+      UI.mount("#ds-nav-mount", UI.BottomNav({
+        items: [
+          { page: "home", label: "หน้าหลัก", iconKey: "home", active: true },
+          { page: "orders", label: "งาน", iconKey: "orders", badge: "0", badgeId: "rider-nav-badge", badgeHidden: true },
+          { page: "earnings", label: "รายได้", iconKey: "wallet" },
+          { page: "profile", label: "โปรไฟล์", iconKey: "profile" }
+        ]
+      }));
+    })();
+  </script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="firebase-lib.js"></script>
+  <script src="menu-data.js"></script>
+  <script src="rider.js"></script>
+  <script src="rider-ui.js"></script>
+</body>
+</html>

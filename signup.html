@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <!-- Dark Theme: ตั้ง data-theme จาก localStorage ก่อน CSS วาด (กันจอวาบ) -->
+  <script>try{(function(){var k="sangkha-theme",ss=localStorage.getItem("sangkha-store-session");if(ss){try{var o=JSON.parse(ss);k="sangkha-theme:store:"+(o&&o.id!=null?o.id:"x")}catch(e){k="sangkha-theme:store"}}else if(localStorage.getItem("sangkha-rider")){k="sangkha-theme:rider:"+localStorage.getItem("sangkha-rider")}else if(localStorage.getItem("sangkha-admin-session")){k="sangkha-theme:admin"}else if(localStorage.getItem("sangkha-customer-session")){k="sangkha-theme:customer:"+localStorage.getItem("sangkha-customer-session")}if(localStorage.getItem(k)==="dark")document.documentElement.setAttribute("data-theme","dark")})()}catch(e){}</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>สมัครร้านค้า — SangKha</title>
+  <link rel="icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles/design-system.css" />
+  <link rel="stylesheet" href="signup.css" />
+</head>
+<body>
+  <!-- ===== หัวหน้า ===== -->
+  <header class="signup-header">
+    <div class="signup-header-inner">
+      <a class="btn-back" href="index.html" aria-label="กลับหน้าร้าน">←</a>
+      <div>
+        <h1>🍳 สมัครร้านค้า</h1>
+        <p class="signup-subtitle">เปิดร้านของคุณบน SangKha Platform</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="signup-main">
+    <!-- ===== ฟอร์มสมัคร ===== -->
+    <form id="signup-form" class="signup-card" novalidate>
+      <div class="form-group">
+        <label for="s-name">ชื่อร้าน *</label>
+        <input id="s-name" type="text" maxlength="40" placeholder="เช่น ร้านข้าวต้มปลาเฮียเป้ง" required />
+      </div>
+
+      <div class="form-group">
+        <label for="s-phone">เบอร์โทรร้าน <small>(ใช้ล็อกอิน Sangkha Partner ได้)</small></label>
+        <input id="s-phone" type="tel" maxlength="10" inputmode="numeric" placeholder="เช่น 0812345678" />
+      </div>
+
+      <div class="form-group">
+        <label for="s-cuisine">ประเภทอาหาร *</label>
+        <input id="s-cuisine" type="text" maxlength="40" placeholder="เช่น อาหารไทย · ซีฟู้ด" required />
+      </div>
+
+      <div class="form-group">
+        <label for="s-pin">รหัสผ่านร้าน (PIN) * <small class="signup-pin-hint">ใช้เข้าสู่ระบบหลังร้าน — เพิ่มเมนูต้องรอแอดมินอนุมัติ</small></label>
+        <input id="s-pin" type="password" minlength="4" maxlength="10" placeholder="เช่น 4821 (อย่างน้อย 4 ตัวอักษร)" required />
+      </div>
+
+      <div class="form-group">
+        <label>โลโก้ร้าน (อีโมจิ)</label>
+        <div id="s-emoji-picker" class="emoji-picker" role="listbox" aria-label="เลือกโลโก้ร้าน"></div>
+      </div>
+
+      <div class="form-group">
+        <label>สีพื้นหลังโลโก้</label>
+        <div class="bg-picker" id="s-bg-picker" role="radiogroup" aria-label="เลือกสีพื้นหลัง"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="s-img">รูปหน้าร้าน (URL ภาพ — ไม่มีก็ได้)</label>
+        <input id="s-img" type="url" placeholder="https://... (ว่าง = ใช้ภาพ AI/โลโก้อัตโนมัติ)" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="s-open">เวลาเปิด</label>
+          <input id="s-open" type="time" value="09:00" />
+        </div>
+        <div class="form-group">
+          <label for="s-close">เวลาปิด</label>
+          <input id="s-close" type="time" value="21:00" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="s-distance">ระยะทาง (กม.)</label>
+          <input id="s-distance" type="number" min="0.1" step="0.1" value="1.0" />
+        </div>
+        <div class="form-group">
+          <label for="s-fee">ค่าส่ง (บาท)</label>
+          <input id="s-fee" type="number" min="0" step="1" value="25" />
+        </div>
+        <div class="form-group">
+          <label for="s-free">ขั้นต่ำส่งฟรี (บาท)</label>
+          <input id="s-free" type="number" min="0" step="1" value="200" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="s-time">เวลาจัดส่ง</label>
+        <input id="s-time" type="text" maxlength="20" placeholder="เช่น 20–30 นาที" value="20–30 นาที" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="s-lat">พิกัดร้าน — ละติจูด (Lat)</label>
+          <input id="s-lat" type="number" step="any" inputmode="decimal" placeholder="เช่น 13.7457" />
+        </div>
+        <div class="form-group">
+          <label for="s-lng">พิกัดร้าน — ลองจิจูด (Lng)</label>
+          <input id="s-lng" type="number" step="any" inputmode="decimal" placeholder="เช่น 100.5334" />
+        </div>
+      </div>
+      <button id="s-gps" type="button" class="btn-gps">📍 ใช้ตำแหน่งปัจจุบันของร้าน (GPS)</button>
+
+      <button type="submit" class="btn-primary btn-submit">สมัครร้านค้า 🚀</button>
+      <p class="signup-switch">มีบัญชีร้านอยู่แล้ว? <a href="login.html">เข้าสู่ระบบ Sangkha Partner</a></p>
+    </form>
+
+    <!-- ===== สำเร็จ ===== -->
+    <div id="signup-success" class="signup-success" hidden>
+      <span class="success-emoji" id="success-emoji">🎉</span>
+      <h2>สมัครร้านค้าสำเร็จ!</h2>
+      <p id="success-name" class="success-name"></p>
+      <p class="success-hint">ร้านของคุณพร้อมเปิดบน SangKha แล้ว — เริ่มเพิ่มเมนูได้เลย</p>
+      <div class="success-actions">
+        <a class="btn-primary" id="btn-to-admin" href="admin.html">ไปจัดการเมนู</a>
+        <a class="btn-ghost" href="index.html">ดูหน้าร้าน</a>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== แจ้งเตือน ===== -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="firebase-config.js"></script>
+  <script src="firebase-lib.js"></script>
+  <script src="menu-data.js"></script>
+  <script src="components/ui.js"></script>
+  <script src="signup.js"></script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <!-- Dark Theme: ตั้ง data-theme จาก localStorage ก่อน CSS วาด (กันจอวาบ) -->
+  <script>try{(function(){var k="sangkha-theme",ss=localStorage.getItem("sangkha-store-session");if(ss){try{var o=JSON.parse(ss);k="sangkha-theme:store:"+(o&&o.id!=null?o.id:"x")}catch(e){k="sangkha-theme:store"}}else if(localStorage.getItem("sangkha-rider")){k="sangkha-theme:rider:"+localStorage.getItem("sangkha-rider")}else if(localStorage.getItem("sangkha-admin-session")){k="sangkha-theme:admin"}else if(localStorage.getItem("sangkha-customer-session")){k="sangkha-theme:customer:"+localStorage.getItem("sangkha-customer-session")}if(localStorage.getItem(k)==="dark")document.documentElement.setAttribute("data-theme","dark")})()}catch(e){}</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ดีลเด็ด</title>
+  <link rel="icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles/design-system.css" />
+  <link rel="stylesheet" href="deal.css" />
+</head>
+<body>
+  <!-- ===== หัวหน้า ===== -->
+  <header class="deal-header">
+    <div class="deal-header-inner">
+      <button id="btn-back" class="btn-back" type="button" aria-label="กลับ">←</button>
+      <div class="deal-header-title">
+        <h1>🔥 ดีลเด็ด</h1>
+        <p class="deal-header-sub">หน้าโปรโมชัน</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="deal-main">
+    <!-- ===== เนื้อหาโปรโมชัน (ซ่อนทั้งหมดถ้าโฆษณาไม่อยู่ในช่วงออกอากาศ) ===== -->
+    <div id="deal-content">
+      <!-- ===== แบนเนอร์โปรโมชัน (เรนเดอร์จาก JS) ===== -->
+      <section id="deal-hero" class="deal-hero" aria-label="โปรโมชัน"></section>
+
+      <!-- ===== รายละเอียด + เงื่อนไข ===== -->
+      <section class="deal-section">
+        <h2>📋 รายละเอียดโปรโมชัน</h2>
+        <p id="deal-desc" class="deal-desc"></p>
+      </section>
+
+      <section class="deal-section">
+        <h2>📜 เงื่อนไขโปรโมชัน</h2>
+        <ol id="deal-terms" class="deal-terms"></ol>
+      </section>
+
+      <!-- ===== ดีลอื่น ๆ ===== -->
+      <section class="deal-section">
+        <h2>✨ ดีลอื่น ๆ ที่น่าสนใจ</h2>
+        <div id="deal-more" class="deal-more"></div>
+      </section>
+    </div>
+
+    <p id="deal-notfound" class="deal-notfound" hidden>ไม่พบโปรโมชันนี้ — <a href="deals.html">ดูดีลเด็ดทั้งหมด →</a></p>
+    <p id="deal-notlive" class="deal-notfound" hidden></p>
+  </main>
+
+  <!-- ===== แจ้งเตือน ===== -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="firebase-config.js"></script>
+  <script src="firebase-lib.js"></script>
+  <script src="menu-data.js"></script>
+  <script src="components/ui.js"></script>
+  <script src="deal.js"></script>
+</body>
+</html>

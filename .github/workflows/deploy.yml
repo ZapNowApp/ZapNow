@@ -1,0 +1,47 @@
+# ============================================================
+# Deploy SangkhaFood ขึ้น GitHub Pages อัตโนมัติทุกครั้งที่ push
+# - เว็บเป็น static ล้วน (HTML/CSS/JS + Firebase) → ไม่ต้อง build
+# - รันอัตโนมัติเมื่อ push ขึ้น branch `main` (หรือกดปุ่ม Run ได้เอง)
+# - ต้องตั้งที่ Settings → Pages → Source: "GitHub Actions" (ครั้งเดียว)
+# ============================================================
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# สิทธิ์ที่ GitHub Pages ต้องใช้
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# กัน deploy ซ้อนกัน — push ใหม่จะยกเลิกงานเก่าที่ค้างอยู่
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      # โฟลเดอร์ root ของ repo = เนื้อหาเว็บ (index.html อยู่ตรงนั้น)
+      # ไฟล์ที่ .gitignore ไว้ (.freebuff/, *.log, node_modules/) ไม่ถูก push อยู่แล้ว
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "."
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

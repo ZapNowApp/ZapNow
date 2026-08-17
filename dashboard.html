@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <!-- Dark Theme: ตั้ง data-theme จาก localStorage ก่อน CSS วาด (กันจอวาบ) -->
+  <script>try{(function(){var k="sangkha-theme",ss=localStorage.getItem("sangkha-store-session");if(ss){try{var o=JSON.parse(ss);k="sangkha-theme:store:"+(o&&o.id!=null?o.id:"x")}catch(e){k="sangkha-theme:store"}}else if(localStorage.getItem("sangkha-rider")){k="sangkha-theme:rider:"+localStorage.getItem("sangkha-rider")}else if(localStorage.getItem("sangkha-admin-session")){k="sangkha-theme:admin"}else if(localStorage.getItem("sangkha-customer-session")){k="sangkha-theme:customer:"+localStorage.getItem("sangkha-customer-session")}if(localStorage.getItem(k)==="dark")document.documentElement.setAttribute("data-theme","dark")})()}catch(e){}</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Dashboard ร้านค้า</title>
+  <link rel="icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="manifest" href="manifest.json" />
+  <!-- Design System กลาง (โหลดก่อน CSS หน้าเสมอ) -->
+  <link rel="stylesheet" href="styles/design-system.css" />
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <!-- ===== แถบบน (AppBar — Shared Component) ===== -->
+  <div id="ds-header-mount"></div>
+
+  <main class="app-main ds-page-pad">
+
+    <!-- ================= หน้าหลัก ================= -->
+    <section id="page-home" class="page active">
+      <!-- การ์ดสรุปร้าน (UserCard — Shared Component) -->
+      <div id="ds-hero-mount"></div>
+
+      <!-- ปุ่มลัด (Button — Shared Component) -->
+      <div id="ds-cta-mount" class="ds-row" style="margin-top:14px"></div>
+
+      <!-- Action Cards (Shared Component) -->
+      <h3 class="ds-section-title">เมนูหลัก</h3>
+      <div id="ds-actions-mount" class="ds-grid-4" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"></div>
+
+      <!-- ออเดอร์ล่าสุด -->
+      <div class="home-latest-head">
+        <h3 class="ds-section-title">ออเดอร์ล่าสุด</h3>
+        <button type="button" class="link-btn" data-go="orders">ดูทั้งหมด →</button>
+      </div>
+      <div id="home-latest" class="home-latest"></div>
+    </section>
+
+    <!-- ================= หน้างาน (dashboard เดิม — รับออเดอร์) ================= -->
+    <section id="page-orders" class="page">
+      <!-- เลือกร้านที่รับออเดอร์ -->
+      <div class="dash-restaurant-bar">
+        <label for="restaurant-select">ร้านที่รับออเดอร์</label>
+        <select id="restaurant-select"></select>
+      </div>
+
+      <!-- ปิดรับออเดอร์ชั่วคราว -->
+      <div class="dash-close-bar">
+        <div class="dash-close-left">
+          <span id="dash-close-label" class="dash-close-label"></span>
+          <input id="dash-close-reason" type="text" maxlength="60" placeholder="เหตุผลที่ปิดชั่วคราว (ไม่บังคับ — ลูกค้าเห็น)" hidden />
+          <label class="dash-auto-toggle">
+            <input type="checkbox" id="dash-close-auto" />
+            <span>🤖 ปิดอัตโนมัติเมื่อออเดอร์ค้าง ≥</span>
+            <input type="number" id="dash-close-auto-n" min="1" max="99" value="5" aria-label="จำนวนออเดอร์ค้างที่ปิดอัตโนมัติ" />
+            <span>ใบ</span>
+          </label>
+        </div>
+        <button id="dash-close-toggle" type="button" class="dash-close-toggle"></button>
+      </div>
+
+      <!-- สถิติ (StatisticCard — Shared Component) -->
+      <div id="ds-stats-mount" class="ds-grid-4"></div>
+
+      <!-- กรองสถานะ -->
+      <nav class="status-tabs" id="status-tabs" aria-label="กรองสถานะออเดอร์">
+        <button class="status-tab active" data-status="ทั้งหมด">ทั้งหมด</button>
+        <button class="status-tab" data-status="ใหม่">ใหม่</button>
+        <button class="status-tab" data-status="กำลังเตรียม">กำลังเตรียม</button>
+        <button class="status-tab" data-status="พร้อมส่ง">พร้อมส่ง</button>
+        <button class="status-tab" data-status="กำลังจัดส่ง">กำลังจัดส่ง</button>
+        <button class="status-tab" data-status="เสร็จสิ้น">เสร็จสิ้น</button>
+        <button class="status-tab" data-status="ยกเลิก">ยกเลิก</button>
+      </nav>
+
+      <!-- รายการออเดอร์ -->
+      <div id="order-list" class="order-list"></div>
+      <p id="order-empty" class="empty-state" hidden>ยังไม่มีออเดอร์ — เมื่อลูกค้าสั่งซื้อ ออเดอร์จะโผล่ที่นี่ทันที</p>
+
+      <!-- รีวิวจากลูกค้า (ดู + ตอบกลับ) -->
+      <section class="dash-reviews">
+        <div class="dash-reviews-head">
+          <h2>⭐ รีวิวจากลูกค้า</h2>
+          <span id="dash-rev-summary" class="dash-rev-summary"></span>
+        </div>
+        <div id="dash-review-list" class="dash-review-list"></div>
+        <p id="dash-review-empty" class="empty-state" hidden>ยังไม่มีรีวิวของร้านนี้ — เมื่อลูกค้าให้คะแนนหลังออเดอร์เสร็จสิ้น จะขึ้นที่นี่</p>
+      </section>
+    </section>
+
+    <!-- ================= หน้ารายงาน ================= -->
+    <section id="page-reports" class="page">
+      <h2 class="ds-section-title">📊 รายงานร้าน</h2>
+      <div id="ds-rep-mount" class="ds-grid-4"></div>
+
+      <h3 class="ds-section-title">สถานะออเดอร์</h3>
+      <div id="rep-status" class="rep-status"></div>
+
+      <h3 class="ds-section-title">ยอดขาย 7 วันล่าสุด</h3>
+      <div id="rep-week" class="rep-week"></div>
+
+      <h3 class="ds-section-title">ออเดอร์วันนี้</h3>
+      <div id="rep-today-list" class="rep-today-list"></div>
+    </section>
+
+    <!-- ================= หน้าโปรไฟล์ ================= -->
+    <section id="page-profile" class="page">
+      <div id="ds-prof-mount"></div>
+
+      <div id="prof-info" class="prof-info"></div>
+
+      <h3 class="ds-section-title">ตั้งค่าร้าน</h3>
+      <div class="prof-actions">
+        <button type="button" class="prof-action" data-go="menu"><svg class="pa-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5h16"/><path d="M5.8 12.5c0 3.9 2.8 6.8 6.2 6.8s6.2-2.9 6.2-6.8"/><path d="M9 9.5V6.8"/><path d="M13 9.5V6.8"/></svg> จัดการเมนู <span>→</span></button>
+        <button type="button" class="prof-action" data-go="riders"><svg class="pa-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.8 8.2h9.2v8.3H2.8z"/><path d="M12 10.8h3.6l3.6 3.6v2.1h-7.2z"/><circle cx="7.4" cy="17.3" r="1.6"/><circle cx="16.6" cy="17.3" r="1.6"/></svg> ไรเดอร์ประจำร้าน <span>→</span></button>
+        <button type="button" class="prof-action" id="prof-close-toggle"><svg class="pa-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.7 5.2 19 10.5"/><path d="M4.2 19.8 13.7 10.3"/><circle cx="17.6" cy="6.4" r="2.6"/></svg> ปิดรับออเดอร์ชั่วคราว <span>→</span></button>
+        <button type="button" class="prof-action" id="prof-ad-category"><svg class="pa-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3h7l9 9-7 7-9-9z"/><circle cx="8.5" cy="8.5" r="1.5"/></svg> หมวดโฆษณาร้าน <span>→</span></button>
+        <button type="button" class="prof-action danger" id="prof-logout"><svg class="pa-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4.5h4V19.5h-4"/><path d="M9.5 8 5 12l4.5 4"/><path d="M5.5 12H15"/></svg> ออกจากระบบ <span>→</span></button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== แถบล่าง (BottomNav — Shared Component) ===== -->
+  <div id="ds-nav-mount"></div>
+
+  <!-- ===== เลือกหมวดโฆษณาร้าน (ร้านตั้งเอง — สไลด์หน้าแรกโชว์โฆษณาตรงหมวดนี้) ===== -->
+  <div id="adcat-overlay" class="ds-overlay" hidden>
+    <div class="ds-modal" role="dialog" aria-modal="true" aria-labelledby="adcat-title">
+      <div class="ds-modal-head">
+        <h3 id="adcat-title">🏷️ หมวดโฆษณาร้าน</h3>
+        <button id="adcat-close" class="ds-modal-x" aria-label="ปิด">✕</button>
+      </div>
+      <p class="ds-modal-hint">เลือกหมวดที่ร้านขาย — ลูกค้าจะเห็นโฆษณาตรงหมวดนี้บนสไลด์หน้าแรก (ร้านตั้งเองได้ ไม่ต้องรอแอดมิน) — เปลี่ยนเมื่อไหร่ก็ได้</p>
+      <div id="adcat-options" class="adcat-options"></div>
+      <div class="ds-modal-actions">
+        <button type="button" id="adcat-clear" class="ds-modal-btn ghost">ไม่ระบุ (ทุกหมวด)</button>
+        <button type="button" id="adcat-save" class="ds-modal-btn primary">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== แจ้งเตือน ===== -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="components/ui.js"></script>
+  <!-- Render Shared Components (เก็บ id เดิมครบ — dashboard.js/dashboard-ui.js ยังทำงานเหมือนเดิม) -->
+  <script>
+    (function () {
+      // AppHeader
+      UI.mount("#ds-header-mount", UI.AppHeader({
+        back: true, backHref: "admin.html",
+        logoImg: "images/no-store.png",
+        title: "Dashboard ร้านค้า", titleId: "app-bar-name",
+        subtitle: "ออเดอร์จากลูกค้า จะแจ้งเตือนทันทีเมื่อมีคำสั่งซื้อใหม่", subtitleId: "dash-subtitle",
+        live: true, liveText: "สด",
+        side: '<span id="firebase-badge" class="firebase-badge" hidden title="ออเดอร์เก็บใน Firestore + ซิงก์ข้ามเครื่อง">🔥</span>'
+      }));
+
+      // UserCard — สรุปร้าน
+      UI.mount("#ds-hero-mount", UI.UserCard({
+        hero: true,
+        avatar: "🍽️", avatarId: "home-logo",
+        name: "—", nameId: "home-name",
+        subtitle: "—", subtitleId: "home-cuisine",
+        badge: { text: "—", tone: "muted", id: "home-status", dot: false },
+        stats: [
+          { value: "0", label: "ออเดอร์วันนี้", id: "home-today-count" },
+          { value: "฿0", label: "ยอดขายวันนี้", id: "home-today-rev" }
+        ]
+      }));
+
+      // ปุ่มลัด
+      UI.mount("#ds-cta-mount",
+        UI.Button({ label: "ดูออเดอร์", variant: "primary", data: [{ k: "go", v: "orders" }], icon: UI.ICONS.orders.replace('<svg', '<svg class="ds-btn-icon"') }) +
+        UI.Button({ label: "เพิ่มเมนู", variant: "secondary", data: [{ k: "go", v: "menu" }], icon: UI.ICONS.plus.replace('<svg', '<svg class="ds-btn-icon"') })
+      );
+
+      // Action Cards
+      UI.mount("#ds-actions-mount",
+        UI.ActionCard({ iconKey: "menu", title: "จัดการเมนู", desc: "เพิ่ม · แก้ไข · ลบเมนู", data: [{ k: "go", v: "menu" }] }) +
+        UI.ActionCard({ iconKey: "orders", title: "จัดการออเดอร์", desc: "รับงาน · เปลี่ยนสถานะอาหาร", data: [{ k: "go", v: "orders" }] }) +
+        UI.ActionCard({ iconKey: "reports", title: "รายงานร้าน", desc: "ยอดขาย · รายได้รวม", data: [{ k: "go", v: "reports" }] }) +
+        UI.ActionCard({ iconKey: "riders", title: "ไรเดอร์", desc: "ไรเดอร์ประจำร้าน", data: [{ k: "go", v: "riders" }] })
+      );
+
+      // สถิติหน้างาน
+      UI.mount("#ds-stats-mount",
+        UI.StatisticCard({ value: "0", label: "รอรับใหม่", tone: "accent", valueId: "stat-new" }) +
+        UI.StatisticCard({ value: "0", label: "ออเดอร์วันนี้", valueId: "stat-today" }) +
+        UI.StatisticCard({ value: "฿0", label: "ยอดขายวันนี้", valueId: "stat-revenue" }) +
+        UI.StatisticCard({ value: "0", label: "กำลังดำเนินการ", valueId: "stat-active" })
+      );
+
+      // การ์ดรายงาน
+      UI.mount("#ds-rep-mount",
+        UI.StatisticCard({ value: "฿0", label: "ยอดขายวันนี้", tone: "accent", valueId: "rep-today-rev" }) +
+        UI.StatisticCard({ value: "0", label: "ออเดอร์วันนี้", valueId: "rep-today-count" }) +
+        UI.StatisticCard({ value: "฿0", label: "รายได้รวม", valueId: "rep-total-rev" }) +
+        UI.StatisticCard({ value: "0", label: "ออเดอร์เสร็จสิ้น", tone: "success", valueId: "rep-done-count" })
+      );
+
+      // โปรไฟล์
+      UI.mount("#ds-prof-mount", UI.UserCard({
+        hero: true,
+        avatar: "🍽️", avatarId: "prof-logo",
+        name: "—", nameId: "prof-name",
+        subtitle: "—", subtitleId: "prof-cuisine",
+        badge: { text: "—", tone: "muted", id: "prof-status", dot: false }
+      }));
+
+      // BottomNav
+      UI.mount("#ds-nav-mount", UI.BottomNav({
+        items: [
+          { page: "home", label: "หน้าหลัก", iconKey: "home", active: true },
+          { page: "orders", label: "งาน", iconKey: "orders", badge: "0", badgeId: "nav-orders-badge", badgeHidden: true },
+          { page: "reports", label: "รายงาน", iconKey: "reports" },
+          { page: "profile", label: "โปรไฟล์", iconKey: "profile" }
+        ]
+      }));
+    })();
+  </script>
+  <script src="firebase-config.js"></script>
+  <script src="firebase-lib.js"></script>
+  <script src="menu-data.js"></script>
+  <script src="dashboard.js"></script>
+  <script src="dashboard-ui.js"></script>
+</body>
+</html>

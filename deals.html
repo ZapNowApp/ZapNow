@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <!-- Dark Theme: ตั้ง data-theme จาก localStorage ก่อน CSS วาด (กันจอวาบ) -->
+  <script>try{(function(){var k="sangkha-theme",ss=localStorage.getItem("sangkha-store-session");if(ss){try{var o=JSON.parse(ss);k="sangkha-theme:store:"+(o&&o.id!=null?o.id:"x")}catch(e){k="sangkha-theme:store"}}else if(localStorage.getItem("sangkha-rider")){k="sangkha-theme:rider:"+localStorage.getItem("sangkha-rider")}else if(localStorage.getItem("sangkha-admin-session")){k="sangkha-theme:admin"}else if(localStorage.getItem("sangkha-customer-session")){k="sangkha-theme:customer:"+localStorage.getItem("sangkha-customer-session")}if(localStorage.getItem(k)==="dark")document.documentElement.setAttribute("data-theme","dark")})()}catch(e){}</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ดีลเด็ด — โปรโมชันทั้งหมด</title>
+  <link rel="icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles/design-system.css" />
+  <link rel="stylesheet" href="deals.css" />
+</head>
+<body>
+  <!-- ===== หัวหน้า ===== -->
+  <header class="deals-header">
+    <div class="deals-header-inner">
+      <div class="deals-title-row">
+        <a class="btn-back" href="index.html" aria-label="กลับหน้าร้าน">←</a>
+        <div>
+          <h1>🔥 ดีลเด็ด</h1>
+          <p class="deals-subtitle">รวมโปรโมชันและดีลทั้งหมดจากทุกแบนเนอร์</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== รายการดีล ===== -->
+  <main class="deals-main">
+    <div id="deal-list" class="deal-list"></div>
+    <p id="deal-empty" class="empty-state" hidden>ยังไม่มีโปรโมชัน — กลับมาดูใหม่ภายหลัง</p>
+  </main>
+
+  <p class="deals-back"><a href="index.html">← กลับหน้าร้าน</a></p>
+
+  <!-- ===== แจ้งเตือน ===== -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="firebase-config.js"></script>
+  <script src="firebase-lib.js"></script>
+  <script src="menu-data.js"></script>
+  <script src="components/ui.js"></script>
+  <script src="deals.js"></script>
+</body>
+</html>

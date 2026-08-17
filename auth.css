@@ -1,0 +1,407 @@
+/* ============================================================
+   auth.css — Design System สำหรับหน้าเข้าสู่ระบบ (ทุกบทบาท)
+   ใช้ tokens/Component เดียวกับ signup.css (หน้าสมัครร้านค้า)
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+[hidden] { display: none !important; }
+
+body {
+  font-family: "Sukhumvit Set", "Prompt", "IBM Plex Sans Thai", system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100dvh;
+}
+
+/* ===== หัวหน้า (เหมือน signup-header) ===== */
+.auth-header {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary));
+  border-bottom: none;
+  padding: 18px 20px;
+  animation: fadeDown .45s ease both;
+  box-shadow: var(--shadow-soft);
+}
+.auth-header-inner {
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.auth-header h1 { font-size: 22px; font-weight: 800; color: #fff; }
+.auth-subtitle { color: rgba(255, 255, 255, .88); font-size: 13.5px; margin-top: 2px; }
+.auth-header .btn-back { background: var(--card); border: none; color: var(--text); }
+
+.btn-back {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--card);
+  font-size: 19px;
+  color: var(--text);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
+  transition: transform .15s;
+}
+.btn-back:hover { transform: scale(1.08); }
+
+/* ===== เนื้อหา ===== */
+.auth-main { max-width: 560px; margin: 0 auto; padding: 20px; }
+
+/* ===== โลโก้ + ชื่อระบบ ===== */
+.auth-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin: 14px 0 22px;
+  animation: fadeUp .5s .05s ease both;
+}
+.auth-logo {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  display: grid;
+  place-items: center;
+  font-size: 44px;
+  box-shadow: var(--shadow);
+  margin-bottom: 12px;
+}
+.auth-brand { font-size: 24px; font-weight: 800; }
+.auth-brand span { color: var(--accent); }
+.auth-welcome { color: var(--muted); font-size: 14px; margin-top: 4px; max-width: 340px; }
+
+/* ===== การ์ด (เหมือน signup-card) ===== */
+.auth-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: fadeUp .5s .12s cubic-bezier(.22, 1.2, .36, 1) both;
+}
+
+/* ===== สลับวิธีล็อกอิน (PIN / OTP) ===== */
+.auth-tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 4px;
+}
+.auth-tab {
+  flex: 1;
+  height: 38px;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background .18s, color .18s, box-shadow .18s;
+}
+.auth-tab.active {
+  background: var(--card);
+  color: var(--accent);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .08);
+}
+.auth-tab:active { transform: scale(.97); }
+
+.method-panel { display: flex; flex-direction: column; gap: 16px; animation: ds-slide-up .3s ease both; }
+
+/* ===== ฟอร์ม (เหมือน signup) ===== */
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.form-group label small {
+  display: block;
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 11.5px;
+  margin-top: 2px;
+}
+.auth-input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--card);
+  transition: border-color .15s;
+}
+.auth-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.auth-input::placeholder { color: var(--muted); opacity: .75; }
+.auth-input:disabled { opacity: .6; }
+
+/* ช่อง PIN + ปุ่มตา */
+.auth-pin-wrap { position: relative; }
+.auth-pin-wrap .auth-input { padding-right: 50px; }
+.auth-eye {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border: none;
+  background: none;
+  font-size: 17px;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: transform .12s, background .15s;
+}
+.auth-eye:active { transform: translateY(-50%) scale(.88); background: var(--bg); }
+
+/* ===== OTP ===== */
+.otp-row { display: flex; gap: 8px; align-items: center; }
+.otp-code-input {
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 6px;
+  text-align: center;
+  color: var(--text);
+  background: var(--card);
+  transition: border-color .15s;
+}
+.otp-code-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.otp-send-btn {
+  flex: none;
+  height: 46px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background .15s, transform .12s;
+}
+.otp-send-btn:hover { background: var(--accent-dark); }
+.otp-send-btn:active { transform: scale(.96); }
+.otp-send-btn:disabled { opacity: .55; cursor: default; }
+.otp-status {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #2f7d43;
+  background: #ecf7ee;
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: none;
+  word-break: break-word;
+}
+.otp-status.visible { display: block; }
+
+/* ===== ปุ่มหลัก (เหมือน btn-primary — เต็มความกว้าง) ===== */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 15px;
+  padding: 14px 20px;
+  border-radius: 16px;
+  cursor: pointer;
+  text-align: center;
+  transition: background .15s, transform .12s;
+}
+.btn-primary:hover { background: var(--accent-dark); }
+.btn-primary:active { transform: scale(.97); }
+.btn-primary:disabled { opacity: .6; cursor: default; }
+
+/* Ripple effect */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .45);
+  transform: scale(0);
+  animation: rippleAnim .6s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes rippleAnim { to { transform: scale(3.4); opacity: 0; } }
+
+/* Loading spinner ในปุ่ม */
+.btn-label { display: inline-flex; align-items: center; gap: 8px; }
+.btn-spinner {
+  display: none;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, .35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+.btn-primary.loading { pointer-events: none; filter: saturate(.75); }
+.btn-primary.loading .btn-label { display: none; }
+.btn-primary.loading .btn-spinner { display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== ปุ่มรอง / ลิงก์ ===== */
+.btn-ghost {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 14.5px;
+  padding: 13px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  transition: background .15s, transform .12s;
+}
+.btn-ghost:hover { background: var(--bg); }
+.btn-ghost:active { transform: scale(.97); }
+
+.auth-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+}
+.auth-link {
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--accent-dark);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 2px;
+  text-decoration: none;
+  transition: opacity .15s;
+}
+.auth-link:hover { opacity: .8; }
+
+.auth-switch {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--muted);
+  animation: fadeUp .5s .2s ease both;
+}
+.auth-switch a, .auth-switch button {
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+  padding: 2px;
+}
+.auth-switch a:hover, .auth-switch button:hover { text-decoration: underline; }
+
+/* ===== โมดัล ===== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(36, 31, 26, .5);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  animation: fadeIn .2s ease both;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, .25);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeUp .3s cubic-bezier(.22, 1.2, .36, 1) both;
+}
+.modal-card h3 { font-size: 18px; font-weight: 800; }
+.modal-card p { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+.modal-actions { display: flex; gap: 10px; margin-top: 6px; }
+.modal-actions .btn-primary, .modal-actions .btn-ghost { flex: 1; padding: 12px 14px; font-size: 14px; width: auto; }
+
+/* ===== แจ้งเตือน (เหมือน signup toast) ===== */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translate(-50%, 20px);
+  background: #241f1a;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 22px;
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s, transform .25s;
+  z-index: 80;
+  box-shadow: var(--shadow);
+  max-width: calc(100vw - 40px);
+  text-align: center;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ===== แอนิเมชันร่วม ===== */
+@keyframes fadeUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes fadeDown {
+  from { transform: translateY(-12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 480px) {
+  .auth-main { padding: 16px; }
+  .auth-card { padding: 18px 16px; }
+  .auth-logo { width: 76px; height: 76px; font-size: 38px; }
+  .auth-brand { font-size: 21px; }
+  .auth-header { padding: 14px 16px; }
+}
+
+/* ===== Theme SangkhaFood: ปุ่มรองโค้ง 16px ===== */
+.btn-ghost { border-radius: 16px; }
+.btn-ghost:active { transform: scale(.97); }

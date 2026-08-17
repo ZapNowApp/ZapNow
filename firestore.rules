@@ -1,0 +1,183 @@
+rules_version = '2';
+// ═══════════════════════════════════════════════════════════════════════
+// 🔥 Firestore Security Rules — ZapNowApp (SangKha Platform)
+//
+// โมเดลสิทธิ์ (อิง Firebase Auth):
+//   - ทุกคนต้องล็อกอิน (request.auth != null) ยกเว้นการอ่านร้าน/เมนู (เปิดสาธารณะ)
+//   - เอกสารแต่ละตัวเก็บ id เจ้าของ:
+//       users        doc id = uid ของ Firebase Auth
+//       restaurants  data.ownerId = uid เจ้าของร้าน
+//       menus        data.restaurantId → ดูเจ้าของจาก restaurants
+//       orders       data.customerId / data.restaurantId / data.riderId
+//       riders       doc id = riderId (= uid ของไรเดอร์)
+//   - แอดมิน = custom claim `admin == true` (ตั้งใน Firebase Console)
+//     หรือ users doc ตัวเองมี role == 'admin' (รองรับทั้ง 2 แบบ)
+//
+// ⚠️ ก่อน Deploy: ระบบยังใช้ล็อกอิน PIN ใน localStorage (ยังไม่ได้ต่อ Firebase Auth)
+//    → ถ้ายังไม่ต่อ Auth อย่าใช้ rules นี้ (ทุกคน request.auth = null → เขียนไม่ได้)
+//    วิธีใช้: (ก) ต่อ Firebase Auth ให้ uid = doc id ตามตารางด้านบน แล้ว deploy rules นี้
+//            (ข) หรือใช้โหมดทดสอบต่อไปจนกว่าจะต่อ Auth เสร็จ
+//    รายละเอียดครบใน FIRESTORE_RULES.md
+// ═══════════════════════════════════════════════════════════════════════
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ────────────────────────────────────────────────────────────────────
+    // Helper: ตรวจสถานะ/บทบาท
+    // ────────────────────────────────────────────────────────────────────
+
+    // ล็อกอินแล้วหรือยัง
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // แอดมินจาก custom claim (ตั้งที่ Firebase Console → Users → เพิ่ม custom claims)
+    function isAdminClaim() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    // แอดมินจาก users doc (role == 'admin' — doc id ต้องตรงกับ auth uid)
+    function isAdminUser() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // แอดมิน = claim หรือ users doc (อันไหนถูกก็ได้)
+    function isAdmin() {
+      return isAdminClaim() || isAdminUser();
+    }
+
+    // เจ้าของเอกสารนี้หรือไม่ (เทียบ field กับ auth uid)
+    function isOwner(field) {
+      return signedIn() && resource.data[field] == request.auth.uid;
+    }
+
+    // เจ้าของหรือแอดมิน
+    function isOwnerOrAdmin(field) {
+      return isAdmin() || isOwner(field);
+    }
+
+    // เจ้าของร้านนี้หรือไม่ (ดูจาก restaurants/<id>.ownerId)
+    // ⚠️ ต้องเช็ค exists() ก่อน get() — get() จะ error ถ้าเอกสารไม่มี
+    function isRestaurantOwner(restaurantId) {
+      return signedIn() &&
+        restaurantId != null &&
+        exists(/databases/$(database)/documents/restaurants/$(restaurantId)) &&
+        get(/databases/$(database)/documents/restaurants/$(restaurantId)).data.ownerId == request.auth.uid;
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // users — เจ้าของแก้ตัวเองได้ / admin ดูทั้งหมดได้
+    // ────────────────────────────────────────────────────────────────────
+    match /users/{uid} {
+      // อ่าน: เจ้าของ (uid ตรงกับ auth uid) หรือแอดมิน
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+
+      // สร้าง: ลงทะเบียนตัวเองได้ (uid ต้องตรงกันทั้ง path และ data — กันปลอมตัว)
+      allow create: if signedIn() &&
+        request.auth.uid == uid &&
+        request.resource.data.uid == request.auth.uid;
+
+      // แก้ไข: เจ้าของเท่านั้น (data.uid ต้องไม่เปลี่ยน — กันแย่ง/ย้ายบัญชี)
+      allow update: if signedIn() &&
+        request.auth.uid == uid &&
+        request.resource.data.uid == request.auth.uid;
+
+      // ลบ: ปิดไว้ (กันลบผู้ใช้พลาด — ให้แอดมินลบผ่าน Console)
+      allow delete: if false;
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // restaurants — owner แก้ร้านตัวเอง / ลูกค้าอ่านได้ (แคตตาล็อกสาธารณะ)
+    // ────────────────────────────────────────────────────────────────────
+    match /restaurants/{restaurantId} {
+      // อ่าน: ทุกคนอ่านได้ (หน้าร้านลูกค้าเปิดดูโดยไม่ต้องล็อกอิน)
+      allow read: if true;
+
+      // สร้าง: เจ้าของต้องระบุตัวเองเป็น ownerId (กันใครก็ได้อ้างเป็นเจ้าของร้าน)
+      allow create: if signedIn() &&
+        (request.resource.data.ownerId == request.auth.uid || isAdmin());
+
+      // แก้ไข: เจ้าของร้าน หรือแอดมิน (ห้ามแก้ถ้าไม่ใช่เจ้าของ — กันร้านอื่นมาแก้ข้อมูลเรา)
+      allow update: if signedIn() &&
+        (request.resource.data.ownerId == request.auth.uid ||
+         request.auth.uid == resource.data.ownerId ||
+         isAdmin());
+
+      // ลบ: แอดมินเท่านั้น (กันเจ้าของลบร้านทิ้งกระทบออเดอร์เก่า)
+      allow delete: if isAdmin();
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // menus — owner ของร้านนั้นเพิ่ม/แก้เมนูได้ / ลูกค้าอ่านได้
+    // ────────────────────────────────────────────────────────────────────
+    match /menus/{menuId} {
+      // อ่าน: สาธารณะ (ลูกค้าเปิดดูเมนูได้)
+      allow read: if true;
+
+      // เขียน (เพิ่ม/แก้/ลบ): ต้องเป็นเจ้าของร้านของ restaurantId ในเอกสารนี้
+      //   เช็คผ่าน restaurants/<restaurantId>.ownerId — เมนูของร้านอื่นแก้ไม่ได้
+      allow create, update: if signedIn() &&
+        (isRestaurantOwner(request.resource.data.restaurantId) || isAdmin());
+
+      allow delete: if signedIn() &&
+        (isRestaurantOwner(resource.data.restaurantId) || isAdmin());
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // orders — ลูกค้าเห็นออเดอร์ตัวเอง / ร้านเห็นออเดอร์ร้านตัวเอง
+    //            ไรเดอร์เห็นงานที่รับ / admin เห็นทั้งหมด
+    // ────────────────────────────────────────────────────────────────────
+    match /orders/{orderId} {
+      // อ่าน: เงื่อนไขใดเงื่อนไขหนึ่ง
+      allow read: if signedIn() && (
+        request.auth.uid == resource.data.customerId ||      // ลูกค้าของออเดอร์นี้
+        request.auth.uid == resource.data.riderId ||         // ไรเดอร์ที่รับงานนี้แล้ว
+        resource.data.status == 'พร้อมส่ง' ||                 // ไรเดอร์เห็นงานที่รอรับ (pool)
+        isRestaurantOwner(resource.data.restaurantId) ||     // ร้านของออเดอร์นี้
+        isAdmin()                                            // แอดมินเห็นทุกใบ
+      );
+
+      // สร้าง: ลูกค้าสั่งได้ (customerId ต้องเป็นตัวเอง — กันสั่งในนามคนอื่น)
+      allow create: if signedIn() &&
+        (request.resource.data.customerId == request.auth.uid || isAdmin());
+
+      // แก้ไข:
+      //   - ลูกค้า (ยกเลิก/แก้) / ร้าน (เปลี่ยนสถานะ) / ไรเดอร์ที่รับแล้ว (ขั้นส่ง/ส่งถึง) / แอดมิน
+      //   - ไรเดอร์รับงาน (claim): ออเดอร์ที่ยังเป็น "พร้อมส่ง" → ตั้งตัวเองเป็น riderId
+      //     ⚠️ กันรับซ้ำ 2 คนพร้อมกันยังต้องพึ่ง transaction ในแอป (rules ไม่ atomic ต่อการอ่าน-เขียน 2 ครั้ง)
+      allow update: if signedIn() && (
+        isAdmin() ||
+        request.auth.uid == resource.data.customerId ||                  // ลูกค้าเจ้าของออเดอร์
+        isRestaurantOwner(resource.data.restaurantId) ||                 // ร้านเจ้าของออเดอร์
+        request.auth.uid == resource.data.riderId ||                     // ไรเดอร์ที่รับงานไปแล้ว
+        (resource.data.status == 'พร้อมส่ง' &&                            // การรับงานของไรเดอร์
+         request.resource.data.riderId == request.auth.uid &&
+         request.resource.data.status == 'กำลังจัดส่ง')
+      );
+
+      // ลบ: แอดมินเท่านั้น (ประวัติออเดอร์เป็นหลักฐานการเงิน)
+      allow delete: if isAdmin();
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // riders — ไรเดอร์แก้ข้อมูลตัวเองได้
+    // ────────────────────────────────────────────────────────────────────
+    match /riders/{riderId} {
+      // อ่าน: ตัวเอง + แอดมิน (กันไรเดอร์คนอื่นเห็นข้อมูลส่วนตัว/เบอร์)
+      allow read: if signedIn() && (request.auth.uid == riderId || isAdmin());
+
+      // สร้าง: ลงทะเบียนตัวเอง (doc id หรือ data.riderId ต้องตรงกับ auth uid)
+      allow create: if signedIn() &&
+        (request.auth.uid == riderId || request.resource.data.riderId == request.auth.uid);
+
+      // แก้ไข: ตัวเองเท่านั้น (แก้ชื่อ/เบอร์/อีเมลของตัวเอง) หรือแอดมิน
+      allow update: if signedIn() &&
+        (request.auth.uid == riderId || isAdmin());
+
+      // ลบ: แอดมินเท่านั้น
+      allow delete: if isAdmin();
+    }
+  }
+}

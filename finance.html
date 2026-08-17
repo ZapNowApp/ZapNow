@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <!-- Dark Theme: ตั้ง data-theme จาก localStorage ก่อน CSS วาด (กันจอวาบ) -->
+  <script>try{(function(){var k="sangkha-theme",ss=localStorage.getItem("sangkha-store-session");if(ss){try{var o=JSON.parse(ss);k="sangkha-theme:store:"+(o&&o.id!=null?o.id:"x")}catch(e){k="sangkha-theme:store"}}else if(localStorage.getItem("sangkha-rider")){k="sangkha-theme:rider:"+localStorage.getItem("sangkha-rider")}else if(localStorage.getItem("sangkha-admin-session")){k="sangkha-theme:admin"}else if(localStorage.getItem("sangkha-customer-session")){k="sangkha-theme:customer:"+localStorage.getItem("sangkha-customer-session")}if(localStorage.getItem(k)==="dark")document.documentElement.setAttribute("data-theme","dark")})()}catch(e){}</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>💰 การเงินแพลตฟอร์ม</title>
+  <link rel="icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles/design-system.css" />
+  <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="finance.css" />
+</head>
+<body>
+  <!-- ===== หัวหน้า ===== -->
+  <header class="dash-header finance-header">
+    <div class="dash-header-inner">
+      <div class="dash-title-row">
+        <a class="btn-back" href="admin.html" aria-label="กลับหน้าจัดการร้านค้า">←</a>
+        <div>
+          <h1>💰 การเงินแพลตฟอร์ม</h1>
+          <p class="dash-subtitle" id="finance-subtitle">ภาพรวมยอดขายร้าน + รายได้ไรเดอร์ + ยอดเบิกถอน</p>
+        </div>
+      </div>
+      <div class="dash-live" title="อัปเดตสดแบบเรียลไทม์">
+        <span class="dash-live-dot" aria-hidden="true"></span> อัปเดตสด
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== สลับ วันนี้ / ทั้งหมด + ตั้งค่าธรรมเนียม ===== -->
+  <div class="finance-bar">
+    <label>ช่วงเวลา</label>
+    <div class="finance-toggle" role="group" aria-label="เลือกช่วงเวลา">
+      <button class="finance-toggle-btn" data-range="today">วันนี้</button>
+      <button class="finance-toggle-btn active" data-range="all">ทั้งหมด</button>
+    </div>
+    <div class="finance-fee">
+      <label for="fee-rate" title="ค่าธรรมเนียมแพลตฟอร์ม คิดจากยอดอาหารหลังส่วนลดของร้าน (ค่าส่งเป็นของไรเดอร์)">💸 ค่าธรรมเนียมแพลตฟอร์ม</label>
+      <input id="fee-rate" type="number" min="0" max="90" step="0.5" inputmode="decimal" />
+      <span class="finance-fee-unit">%</span>
+      <button id="fee-save" type="button">บันทึก</button>
+    </div>
+  </div>
+
+  <main class="dash-main">
+    <!-- ===== สถิติรวม ===== -->
+    <div class="stats-row finance-stats">
+      <div class="stat-card"><b id="stat-sales">฿0</b><span>ยอดขายรวม</span></div>
+      <div class="stat-card"><b id="stat-orders">0</b><span>ออเดอร์ทั้งหมด</span></div>
+      <div class="stat-card finance-stat-platform"><b id="stat-platform-profit">฿0</b><span>กำไรแพลตฟอร์ม</span></div>
+      <div class="stat-card finance-stat-rider"><b id="stat-rider-earn">฿0</b><span>รายได้ไรเดอร์</span></div>
+      <div class="stat-card"><b id="stat-withdraw">฿0</b><span>ยอดเบิกถอน</span></div>
+    </div>
+
+    <!-- ===== ยอดขายรายร้าน ===== -->
+    <section class="finance-section">
+      <div class="finance-section-head">
+        <h2>📊 ยอดขายรายร้าน</h2>
+        <span id="finance-rest-summary" class="finance-section-sub"></span>
+      </div>
+      <div class="finance-table-wrap">
+        <table class="finance-table">
+          <thead>
+            <tr>
+              <th>ร้าน</th>
+              <th class="num">อัตรา</th>
+              <th class="num">ออเดอร์</th>
+              <th class="num">ยอดอาหาร</th>
+              <th class="num">ค่าจัดส่ง</th>
+              <th class="num">ส่วนลด</th>
+              <th class="num">ยอดรวม</th>
+              <th class="num">💸 ค่าธรรมเนียม</th>
+              <th class="num">ร้านได้สุทธิ</th>
+            </tr>
+          </thead>
+          <tbody id="finance-rest-body"></tbody>
+        </table>
+      </div>
+      <p id="finance-rest-empty" class="empty-state" hidden>ยังไม่มีข้อมูลออเดอร์ในช่วงนี้</p>
+    </section>
+
+    <!-- ===== รายได้ไรเดอร์ ===== -->
+    <section class="finance-section">
+      <div class="finance-section-head">
+        <h2>🛵 รายได้ไรเดอร์</h2>
+        <span id="finance-rider-summary" class="finance-section-sub"></span>
+      </div>
+      <div class="finance-table-wrap">
+        <table class="finance-table">
+          <thead>
+            <tr>
+              <th>ไรเดอร์</th>
+              <th class="num">ส่งเสร็จ</th>
+              <th class="num">รายได้ (ค่าจัดส่ง)</th>
+              <th class="num">เบิกแล้ว</th>
+              <th class="num">คงเหลือ</th>
+            </tr>
+          </thead>
+          <tbody id="finance-rider-body"></tbody>
+        </table>
+      </div>
+      <p id="finance-rider-empty" class="empty-state" hidden>ยังไม่มีไรเดอร์ลงทะเบียน</p>
+    </section>
+
+    <!-- ===== ประวัติการเบิกถอน ===== -->
+    <section class="finance-section">
+      <div class="finance-section-head">
+        <h2>🧾 ประวัติการเบิกถอน</h2>
+        <span class="finance-section-sub">ทั้งหมด (เรียงใหม่สุดก่อน)</span>
+      </div>
+      <div id="finance-withdraw-list" class="finance-withdraw-list"></div>
+      <p id="finance-withdraw-empty" class="empty-state" hidden>ยังไม่มีการเบิกถอน</p>
+    </section>
+  </main>
+
+  <!-- ===== แจ้งเตือน ===== -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="firebase-config.js"></script>
+  <script src="firebase-lib.js"></script>
+  <script src="menu-data.js"></script>
+  <script src="components/ui.js"></script>
+  <script src="finance.js"></script>
+</body>
+</html>

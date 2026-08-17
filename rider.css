@@ -1,0 +1,916 @@
+/* ===== Rider Dashboard — ส่วนเพิ่มจาก dashboard.css ===== */
+.rider-header h1 { color: var(--purple); }
+
+/* ===== แผนที่นำทางไรเดอร์ (โมดัล) ===== */
+.rider-map-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 15, 25, 0.55);
+  z-index: 60;
+}
+.rider-map-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, calc(100vw - 28px));
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  z-index: 61;
+  overflow: hidden;
+}
+.rider-map-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.rider-map-head h2 { font-size: 17px; font-weight: 800; margin: 0; }
+.rider-map-close {
+  border: none;
+  background: var(--bg);
+  color: var(--text);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 15px;
+  cursor: pointer;
+}
+.rider-map-close:hover { background: var(--line); }
+.rider-map-body { padding: 14px 18px 18px; }
+.rider-map-switch {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.rider-map-switch button {
+  flex: 1;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--muted);
+  padding: 9px 10px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.rider-map-switch button.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+.rider-map-wrap {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #eef1e3;
+}
+.rider-map-leaflet {
+  height: 250px;
+  width: 100%;
+}
+.rider-map-leaflet .leaflet-container { font-family: inherit; }
+
+/* ===== Marker อีโมจิบนแผนที่จริง (Leaflet divIcon) ===== */
+.map-emoji-icon { background: transparent; border: none; }
+.map-pin {
+  position: relative;
+  font-size: 24px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .35));
+}
+.map-pin-label {
+  position: absolute;
+  top: 27px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, .94);
+  border-radius: 8px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #333;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .25);
+}
+.map-pin-coord {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, .85);
+  border-radius: 6px;
+  padding: 0 5px;
+  font-size: 9px;
+  white-space: nowrap;
+  color: #6b6b6b;
+}
+.rider-map-eta {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--card);
+  border-top: 1px solid var(--line);
+}
+
+/* ปุ่มแผนที่บนการ์ด */
+.btn-map {
+  background: linear-gradient(135deg, #38b6ff, #1f7fe0);
+}
+.btn-map:hover { filter: brightness(1.08); }
+
+/* ===== ไรเดอร์: เข้าสู่ระบบ / กำลังทำงานเป็น ===== */
+.rider-name-bar {
+  max-width: 860px;
+  margin: 14px auto 0;
+  padding: 0 20px;
+}
+.rider-login {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.rider-login label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--muted);
+}
+.rider-register-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rider-register-row input {
+  flex: 1 1 140px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 14.5px;
+  color: var(--text);
+  background: var(--card);
+}
+.rider-register-row input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.rider-register-row button {
+  border: none;
+  background: var(--purple);
+  color: #fff;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 13.5px;
+  padding: 0 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, transform .12s;
+}
+.rider-register-row button:hover { background: #6d28d9; transform: translateY(-1px); }
+.rider-login-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.rider-active {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+.rider-active label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--muted);
+}
+.rider-active b {
+  font-size: 15px;
+  color: var(--text);
+}
+.rider-active button {
+  margin-left: auto;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--accent-dark);
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.rider-active button:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* ===== สถิติไรเดอร์ ===== */
+.rider-stat-ready b { color: var(--accent); }
+.rider-stat-delivering b { color: var(--purple); }
+.rider-stat-done b { color: var(--green); }
+.rider-stat-earn b { color: var(--green); }
+
+/* ===== กรองประวัติตามเดือน (แท็บ ส่งแล้ว) ===== */
+.done-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+.done-filter-bar select {
+  flex: 0 1 260px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--card);
+  cursor: pointer;
+}
+.done-filter-bar select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.done-summary {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--purple);
+  white-space: nowrap;
+}
+.done-slip-btn {
+  margin-left: auto;
+  border: none;
+  background: var(--purple);
+  color: #fff;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 9px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, transform .12s;
+}
+.done-slip-btn:hover { background: #6d28d9; transform: translateY(-1px); }
+.done-slip-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+/* ===== โปรไฟล์ไรเดอร์ ===== */
+.rider-profile {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px solid var(--line);
+}
+.rider-profile-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rider-profile-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 2px;
+  border-bottom: 1px dashed var(--line);
+}
+.rider-profile-row:last-child { border-bottom: none; }
+.rider-profile-row span { font-size: 12.5px; color: var(--muted); }
+.rider-profile-row b { font-size: 14px; color: var(--text); }
+.profile-phone-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.profile-phone-wrap button {
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--accent-dark);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.profile-phone-wrap button:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.profile-edit {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.profile-edit input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--card);
+}
+.profile-edit input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.profile-edit button {
+  border: none;
+  background: var(--green);
+  color: #fff;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 0 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.profile-edit button:hover { filter: brightness(1.06); }
+.profile-edit button:last-child {
+  background: var(--card);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+/* ===== กระเป๋าเงินไรเดอร์ ===== */
+.rider-wallet {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px solid var(--line);
+}
+.rider-wallet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.rider-wallet-head b { font-size: 16px; }
+.rider-wallet-live { font-size: 12px; color: var(--muted); }
+.rider-wallet-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.wallet-stat {
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.wallet-stat span { font-size: 11.5px; color: var(--muted); }
+.wallet-stat b { font-size: 19px; font-weight: 800; }
+.wallet-stat:nth-child(1) b { color: var(--purple); }
+.wallet-stat:nth-child(2) b { color: var(--muted); }
+.wallet-stat:nth-child(3) b { color: var(--green); }
+.rider-wallet-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.rider-wallet-actions input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 14.5px;
+  color: var(--text);
+  background: var(--card);
+}
+.rider-wallet-actions input:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--green-soft);
+}
+.rider-wallet-actions button {
+  border: none;
+  background: var(--green);
+  color: #fff;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 14px;
+  padding: 0 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, transform .12s;
+}
+.rider-wallet-actions button:hover { background: #178043; transform: translateY(-1px); }
+.rider-wallet-actions button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+.rider-wallet-history {
+  margin-top: 14px;
+  border-top: 1px dashed var(--line);
+  padding-top: 12px;
+}
+.rider-wallet-history > b { font-size: 13px; color: var(--muted); }
+.wallet-history-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.wallet-history-empty { font-size: 13px; color: var(--muted); padding: 4px 0; }
+.wallet-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13.5px;
+}
+.wallet-history-item b { color: var(--green); }
+.wallet-history-item small { color: var(--muted); }
+.wallet-history-item button {
+  border: none;
+  background: none;
+  color: var(--danger);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 8px;
+}
+.wallet-history-item button:hover { background: var(--danger-soft); }
+
+/* ===== เส้นทาง ร้าน → ลูกค้า ===== */
+.rider-route {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  font-size: 13.5px;
+}
+.rider-route-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.rider-route-col b { font-size: 14px; }
+.rider-route-col small { color: var(--muted); font-size: 12px; }
+.rider-route-mid {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  color: var(--muted);
+  font-size: 16px;
+}
+.rider-route-line {
+  height: 22px;
+  width: 2px;
+  background: var(--purple);
+  margin: 2px auto;
+  border-radius: 2px;
+}
+
+/* ===== กลุ่มป้ายหัวการ์ด ===== */
+.order-head-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ===== ป้ายไรเดอร์บนการ์ด ===== */
+.rider-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--purple-soft);
+  color: var(--purple);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.rider-earn-chip {
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 12.5px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+/* ===== ขั้นตอนการส่ง (ไรเดอร์อัปเดตตำแหน่ง) ===== */
+.rider-stage-line {
+  background: var(--purple-soft);
+  color: var(--purple);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+.btn-arrived {
+  background: var(--purple);
+  color: #fff;
+  flex: 1;
+}
+.btn-arrived:hover { background: #6d28d9; }
+.btn-depart {
+  background: var(--blue);
+  color: #fff;
+  flex: 1;
+}
+.btn-depart:hover { background: #1d4ed8; }
+
+/* ===== ปุ่มไรเดอร์ ===== */
+.btn-take {
+  background: var(--purple);
+  color: #fff;
+  flex: 1;
+}
+.btn-take:hover { background: #6d28d9; }
+.btn-deliver {
+  background: var(--green);
+  color: #fff;
+  flex: 1;
+}
+.btn-deliver:hover { background: #178043; }
+.btn-release {
+  background: var(--bg);
+  color: var(--muted);
+}
+.btn-release:hover { background: var(--danger-soft); color: var(--danger); }
+
+/* การ์ดงานพร้อมรับ — ไฮไลต์ให้เห็นชัด */
+.order-card.order-ready {
+  border-color: var(--purple);
+  background: linear-gradient(180deg, #f6f1fe, #ffffff 60%);
+}
+.order-card.order-delivering {
+  border-color: var(--green);
+  background: linear-gradient(180deg, #f0fbf4, #ffffff 60%);
+}
+
+/* ===== สลิปรายเดือน (สรุปงาน + รายได้ + ภาษีหัก ณ ที่จ่าย) ===== */
+.slip-modal { width: min(620px, calc(100vw - 28px)); }
+.slip-body { max-height: min(62vh, 520px); overflow-y: auto; }
+.slip-paper {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: inset 0 0 0 4px #faf7ff;
+}
+.slip-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 2px solid var(--purple);
+  padding-bottom: 10px;
+}
+.slip-head b { font-size: 17px; color: var(--purple); }
+.slip-head span { font-size: 12px; color: var(--muted); font-weight: 800; }
+.slip-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 4px 16px;
+  margin: 12px 0;
+}
+.slip-meta div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--line);
+}
+.slip-meta span { color: var(--muted); }
+.slip-meta b { color: var(--text); }
+.slip-totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.slip-totals > div {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.slip-totals span { font-size: 11px; color: var(--muted); }
+.slip-totals b { font-size: 16px; }
+.slip-totals .slip-tax b { color: var(--danger); }
+.slip-totals .slip-net {
+  background: var(--purple-soft);
+  border: 1px solid var(--purple);
+}
+.slip-totals .slip-net b { color: var(--purple); font-size: 18px; }
+/* สรุปภาษีรายร้าน (แต่ละร้าน = อัตราของตัวเอง + ยอดหักรวม) */
+.slip-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.slip-groups-head {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+.slip-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 7px 12px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+.slip-group-name { font-weight: 800; }
+.slip-group-meta {
+  flex: 1;
+  min-width: 120px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.slip-group > b {
+  color: var(--danger);
+  font-weight: 800;
+  white-space: nowrap;
+}
+.slip-table-wrap { overflow-x: auto; }
+.slip-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.slip-table th {
+  text-align: left;
+  color: var(--muted);
+  font-size: 11.5px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.slip-table td {
+  padding: 6px 8px;
+  border-bottom: 1px dashed var(--line);
+  white-space: nowrap;
+}
+.slip-table td:last-child { text-align: right; font-weight: 800; }
+.slip-table .slip-empty { text-align: center; color: var(--muted); font-weight: 400; }
+.slip-sent {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--green);
+  font-weight: 800;
+}
+.slip-send {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.slip-send input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--card);
+}
+.slip-send input:focus {
+  outline: none;
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px var(--purple-soft);
+}
+.slip-send button {
+  border: none;
+  background: var(--purple);
+  color: #fff;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 13.5px;
+  padding: 0 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, transform .12s;
+}
+.slip-send button:hover { background: #6d28d9; transform: translateY(-1px); }
+.slip-send button:last-child {
+  background: var(--card);
+  color: var(--accent-dark);
+  border: 1px solid var(--line);
+}
+.slip-send button:last-child:hover { background: var(--accent-soft); border-color: var(--accent); }
+.slip-note {
+  margin: 8px 2px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* โทรหา / ที่อยู่ลูกค้า (เฉพาะไรเดอร์) */
+.rider-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.rider-contact a {
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 800;
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 7px 14px;
+  border-radius: 999px;
+  transition: border-color .15s, background .15s;
+}
+.rider-contact a:hover { border-color: var(--accent); background: var(--accent-soft); }
+
+/* ============================================================
+   Rider UI (รูปแบบเดียวกับ Restaurant Dashboard)
+   ============================================================ */
+/* Ripple effect */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .4);
+  transform: scale(0);
+  animation: ripAnim .6s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes ripAnim { to { transform: scale(3.2); opacity: 0; } }
+.action-card, .home-cta-btn, .prof-action { position: relative; overflow: hidden; }
+
+/* ไอคอน Action Card เพิ่ม (ให้ครบ 7 ใบ) */
+.action-icon-history { background: linear-gradient(135deg, #9b59b6, #c39bd3); }
+.action-icon-profile { background: linear-gradient(135deg, #2f89c9, #6fb3e8); }
+.action-icon-settings { background: linear-gradient(135deg, #8d6e63, #bcaaa4); }
+
+/* การ์ดสรุปไรเดอร์ (หน้าหลัก) */
+.rider-avatar { font-size: 30px; }
+.rider-rating { color: var(--accent); font-weight: 800; }
+.home-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  margin-top: 4px;
+  width: fit-content;
+}
+.home-latest-item .order-card { border-radius: 16px; }
+.home-empty { color: var(--muted); font-size: 13.5px; padding: 18px 4px; }
+
+/* ===== หน้ารายได้: สรุปตามเดือน ===== */
+.earn-month {
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.earn-month-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 8px;
+}
+.earn-month-head b { font-size: 14.5px; }
+.earn-month-head span { font-size: 12.5px; color: var(--accent-dark); font-weight: 800; }
+.earn-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 2px;
+  font-size: 13px;
+}
+.earn-row span { color: var(--muted); }
+.earn-row b { color: var(--text); }
+
+/* ===== หน้าตั้งค่า ===== */
+.settings-card { padding: 10px 16px; }
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+}
+.settings-row b { font-size: 14.5px; display: block; }
+.settings-row small { color: var(--muted); font-size: 12px; }
+.switch-btn {
+  flex: none;
+  width: 50px;
+  height: 28px;
+  border-radius: 999px;
+  border: none;
+  background: #e4dcd2;
+  position: relative;
+  cursor: pointer;
+  transition: background .2s;
+}
+.switch-btn .switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .2);
+  transition: left .2s;
+}
+.switch-btn.on { background: var(--accent); }
+.switch-btn.on .switch-knob { left: 25px; }
+.settings-actions { margin-top: 14px; }
+
+/* ===== ป๊อปอัปลอยงานใหม่ (ไรเดอร์) ===== */
+.rider-job-popup { border-top: 4px solid #7c4dff; }
+.rider-job-popup .nop-badge { background: #7c4dff; color: #fff; }
+.rider-job-popup .nop-accept { background: linear-gradient(135deg, #7c4dff, #9b6bff); }
+.rider-job-popup .nop-accept:hover { background: linear-gradient(135deg, #6a3de0, #8a55f0); }
+
+/* ===== ป๊อปอัปงานใหม่: แถวปุ่ม (เปิดแผนที่ + รับงาน) ===== */
+.nop-actions { display: flex; gap: 8px; margin-top: 10px; }
+.nop-map {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1.5px solid #7c4dff;
+  background: #fff;
+  color: #7c4dff;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .2s, transform .15s;
+}
+.nop-map:active { transform: scale(.97); background: #f3edff; }
+.nop-accept { flex: 1.6; }
+
+/* ===== Theme SangkhaFood: ปุ่มมุมโค้ง 16px + แอนิเมชันกด ===== */
+.btn-map, .btn-arrived, .btn-depart, .btn-take, .btn-deliver, .btn-release {
+  border-radius: 16px;
+}
+.btn-map:active, .btn-arrived:active, .btn-depart:active, .btn-take:active, .btn-deliver:active, .btn-release:active {
+  transform: scale(.97);
+}

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <!-- Dark Theme: ตั้ง data-theme จาก localStorage ก่อน CSS วาด (กันจอวาบ) -->
+  <script>try{(function(){var k="sangkha-theme",ss=localStorage.getItem("sangkha-store-session");if(ss){try{var o=JSON.parse(ss);k="sangkha-theme:store:"+(o&&o.id!=null?o.id:"x")}catch(e){k="sangkha-theme:store"}}else if(localStorage.getItem("sangkha-rider")){k="sangkha-theme:rider:"+localStorage.getItem("sangkha-rider")}else if(localStorage.getItem("sangkha-admin-session")){k="sangkha-theme:admin"}else if(localStorage.getItem("sangkha-customer-session")){k="sangkha-theme:customer:"+localStorage.getItem("sangkha-customer-session")}if(localStorage.getItem(k)==="dark")document.documentElement.setAttribute("data-theme","dark")})()}catch(e){}</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ครัวสังขา — ร้านอาหาร</title>
+  <link rel="icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles/design-system.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- ===== TAB: หน้าแรก (สวัสดี + ที่อยู่ + ค้นหา + โปรโมชั่น + ร้านใกล้คุณ) ===== -->
+  <section id="tab-home" class="customer-tab active" aria-label="หน้าแรก">
+    <!-- ===== หัวติดอยู่กับที่ (หน้าแรก): โฆษณาสไลด์บนสุด + แถบย่อ — เห็นตลอดเวลากดเลื่อน ===== -->
+    <div class="sticky-head sticky-head-home">
+      <section class="top-ad" id="top-ad-home" aria-label="โฆษณา">
+        <span class="ad-badge top-ad-badge">โฆษณา</span>
+        <div class="top-ad-slides" id="top-ad-slides-home"></div>
+        <button class="top-ad-arrow prev" id="ad-prev-home" type="button" aria-label="โฆษณาก่อนหน้า">‹</button>
+        <button class="top-ad-arrow next" id="ad-next-home" type="button" aria-label="โฆษณาถัดไป">›</button>
+        <div class="top-ad-dots" id="ad-dots-home" role="tablist" aria-label="สไลด์โฆษณา"></div>
+        <div class="top-ad-speed">
+          <span class="top-ad-speed-icon" aria-hidden="true">⏱</span>
+          <select id="ad-speed-home" aria-label="ความเร็วหมุนสไลด์">
+            <option value="3000">3 วิ</option>
+            <option value="5000">5 วิ</option>
+            <option value="8000">8 วิ</option>
+            <option value="10000">10 วิ</option>
+          </select>
+          <span class="top-ad-speed-caret" aria-hidden="true">▾</span>
+        </div>
+      </section>
+      <button class="ad-mini" id="ad-mini-home" type="button" aria-label="ดูโฆษณานี้">
+        <span class="ad-mini-icon" id="ad-mini-icon-home" aria-hidden="true">⚡</span>
+        <span class="ad-mini-text" id="ad-mini-text-home">โปรเด็ดวันนี้</span>
+        <span class="ad-mini-go" aria-hidden="true">ดู →</span>
+      </button>
+    </div>
+    <div class="home-head">
+      <div class="home-greet">
+        <h1 id="home-greet">สวัสดี 👋</h1>
+        <p id="home-greet-name">ยินดีต้อนรับสู่ SangkhaFood</p>
+      </div>
+      <button class="home-loc" id="home-loc" type="button" title="กดเพื่อตั้งตำแหน่งจัดส่ง">
+        <span class="home-loc-icon" aria-hidden="true">📍</span>
+        <div><small>ส่งที่</small><b id="home-deliver-to">—</b></div>
+      </button>
+    </div>
+    <div class="home-search-wrap">
+      <span aria-hidden="true">🔍</span>
+      <input id="home-search" type="text" placeholder="ค้นหาร้านอาหาร หรือ เมนู" autocomplete="off" aria-label="ค้นหาร้านอาหารหรือเมนู" />
+    </div>
+    <div class="home-section-title">🔥 โปรโมชั่นเด็ด</div>
+    <div id="home-promos" class="home-promos" aria-live="polite"></div>
+    <div class="home-section-title">🍜 ร้านอาหารใกล้คุณ</div>
+    <div id="home-restaurants" class="home-restaurants"></div>
+  </section>
+
+  <!-- ===== TAB: ร้านอาหาร (ระบบเดิมทั้งหมด — สไลด์/ชิปร้าน/เมนู/ตะกร้า) ===== -->
+  <section id="tab-restaurants" class="customer-tab" aria-label="ร้านอาหาร">
+  <!-- ===== หัวติดอยู่กับที่: โฆษณาบนสุด (สไลด์) + ช่องค้นหา — เห็นตลอดเวลากดเลื่อนดูเมนู ===== -->
+  <div class="sticky-head">
+  <!-- ===== โฆษณาบนสุด (สไลด์หมุนหลายชิ้น) ===== -->
+  <section class="top-ad" id="top-ad" aria-label="โฆษณา">
+    <span class="ad-badge top-ad-badge">โฆษณา</span>
+
+    <!-- สไลด์โฆษณาเรนเดอร์จาก ADS ใน app.js (สไลด์แรกมีคลิปวิดีโอ ad-video.mp4/.webm ถ้ามีไฟล์) -->
+    <div class="top-ad-slides" id="top-ad-slides"></div>
+
+    <button class="top-ad-arrow prev" id="ad-prev" type="button" aria-label="โฆษณาก่อนหน้า">‹</button>
+    <button class="top-ad-arrow next" id="ad-next" type="button" aria-label="โฆษณาถัดไป">›</button>
+    <div class="top-ad-dots" id="ad-dots" role="tablist" aria-label="สไลด์โฆษณา"></div>
+
+    <div class="top-ad-speed">
+      <span class="top-ad-speed-icon" aria-hidden="true">⏱</span>
+      <select id="ad-speed" aria-label="ความเร็วหมุนสไลด์">
+        <option value="3000">3 วิ</option>
+        <option value="5000">5 วิ</option>
+        <option value="8000">8 วิ</option>
+        <option value="10000">10 วิ</option>
+      </select>
+      <span class="top-ad-speed-caret" aria-hidden="true">▾</span>
+    </div>
+  </section>
+
+  <!-- ===== ค้นหาร้าน/เมนูข้ามร้าน ===== -->
+  <section class="search-bar" aria-label="ค้นหา">
+    <span class="search-icon" aria-hidden="true">🔍</span>
+    <input id="search-input" type="text" placeholder="ค้นหาร้านหรือเมนู... เช่น พิซซ่า, ก๋วยเตี๋ยว" autocomplete="off" aria-label="ค้นหาร้านหรือเมนู" />
+    <button id="search-clear" class="search-clear" type="button" aria-label="ล้างการค้นหา" hidden>✕</button>
+  </section>
+
+  <!-- ===== แถบโฆษณาย่อ (โชว์เมื่อเลื่อนลงไกล — หัวหด เหลือแถบบาง + ช่องค้นหาเต็ม) ===== -->
+  <button class="ad-mini" id="ad-mini" type="button" aria-label="ดูโฆษณานี้">
+    <span class="ad-mini-icon" id="ad-mini-icon" aria-hidden="true">⚡</span>
+    <span class="ad-mini-text" id="ad-mini-text">โปรเด็ดวันนี้</span>
+    <span class="ad-mini-go" aria-hidden="true">ดู →</span>
+  </button>
+  </div><!-- /.sticky-head -->
+
+  <!-- ===== เลือกร้านค้า ===== -->
+  <section class="store-switcher" aria-label="เลือกร้านค้า">
+    <div class="store-switcher-head">
+      <p class="store-switcher-label">ร้านค้า
+        <span class="store-sort-toggle" role="group" aria-label="เรียงลำดับร้าน">
+          <button id="sort-near" class="sort-btn" type="button" aria-pressed="false">📍 ใกล้สุด</button>
+          <button id="sort-top" class="sort-btn" type="button" aria-pressed="false">⭐ คะแนนสูงสุด</button>
+        </span>
+      </p>
+    </div>
+    <div id="store-list" class="store-list"></div>
+  </section>
+
+  <!-- ===== Header / ข้อมูลร้าน ===== -->
+  <header class="hero">
+    <button class="btn-back" aria-label="กลับ">←</button>
+    <button id="btn-follow" class="btn-follow" aria-pressed="false" aria-label="ติดตามร้าน">🔖</button>
+
+    <!-- แบนเนอร์รูปหน้าร้าน (ภาพจริง — fallback อัตโนมัติ) + ปุ่มใช้ตำแหน่งทับบนภาพ -->
+    <div class="restaurant-cover" id="restaurant-cover">
+      <button id="btn-locate-me" type="button" class="btn-locate">📍 ใช้ตำแหน่งของฉัน</button>
+    </div>
+
+    <div class="hero-info">
+      <h1 class="restaurant-name" id="restaurant-name">ครัวสังขา <span class="tag tag-new" id="restaurant-new-tag" hidden>ใหม่</span></h1>
+      <p class="restaurant-cuisine" id="restaurant-cuisine">อาหารไทย · อาหารตามสั่ง</p>
+
+      <div class="meta-row">
+        <span class="meta rating">
+          <span class="stars" aria-hidden="true">★★★★★</span>
+          <strong id="restaurant-rating">4.8</strong>
+          <span class="muted" id="restaurant-reviews">(1,240 รีวิว)</span>
+        </span>
+        <span class="meta" id="restaurant-hours">🕐 10:00 – 22:00 น.</span>
+        <span class="meta store-status" id="restaurant-status" role="status"></span>
+        <span class="meta" id="restaurant-distance">📍 1.2 กม.</span>
+      </div>
+
+      <div class="meta-row meta-row-secondary">
+        <span class="tag" id="restaurant-tag-delivery">ส่งฟรี เมื่อสั่งขั้นต่ำ ฿300</span>
+        <span class="tag" id="restaurant-tag-time">จัดส่ง 20–30 นาที</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== สถานะออเดอร์สด (ติดตามหลังสั่งซื้อ) ===== -->
+  <section id="order-tracker" class="order-tracker" hidden aria-live="polite" aria-label="สถานะออเดอร์สด"></section>
+
+  <!-- ===== เมนู ===== -->
+  <main class="menu-section">
+    <nav class="category-tabs" aria-label="หมวดเมนู">
+      <button class="tab active" data-category="แนะนำ">แนะนำ</button>
+      <button class="tab" data-category="จานหลัก">จานหลัก</button>
+      <button class="tab" data-category="เครื่องดื่ม">เครื่องดื่ม</button>
+      <button class="tab" data-category="ของหวาน">ของหวาน</button>
+    </nav>
+
+    <!-- ===== ดีลเด็ด (แถวการ์ดในส่วนเมนู) ===== -->
+    <div id="deals-rail" class="deals-rail">
+      <div class="deals-rail-head">
+        <h2>🔥 ดีลเด็ด</h2>
+        <a href="deals.html">ดูทั้งหมด →</a>
+      </div>
+      <div id="deals-rail-list" class="deals-rail-list"></div>
+    </div>
+
+    <div id="menu-list" class="menu-list"></div>
+
+    <!-- ===== ผลการค้นหาข้ามร้าน ===== -->
+    <div id="search-results" class="search-results" hidden></div>
+
+    <!-- ===== รีวิวจากลูกค้า (สาธารณะ — ลูกค้าทุกคนเห็นได้) ===== -->
+    <section id="public-reviews" class="public-reviews" hidden aria-label="รีวิวจากลูกค้า">
+      <div class="public-reviews-head">
+        <h2>⭐ รีวิวจากลูกค้า</h2>
+        <span id="public-rev-summary" class="public-rev-summary"></span>
+      </div>
+      <div id="public-review-list" class="public-review-list"></div>
+    </section>
+  </main>
+  </section><!-- /.tab-restaurants -->
+
+  <!-- ===== TAB: โปรโมชัน ===== -->
+  <section id="tab-promos" class="customer-tab" aria-label="โปรโมชัน">
+    <div class="tab-page-head">
+      <h2>🔥 โปรโมชันทั้งหมด</h2>
+      <p>รวมดีลและคูปองที่กำลังออกอากาศจากทุกแบนเนอร์</p>
+    </div>
+    <div id="promos-list" class="promos-list"></div>
+  </section>
+
+  <!-- ===== TAB: ออเดอร์ ===== -->
+  <section id="tab-orders" class="customer-tab" aria-label="ออเดอร์">
+    <div class="tab-page-head">
+      <h2>📦 ออเดอร์ของฉัน</h2>
+      <p>ดูสถานะและประวัติคำสั่งซื้อ</p>
+    </div>
+    <div id="orders-list" class="orders-list"></div>
+  </section>
+
+  <!-- ===== TAB: ติดตามส่ง ===== -->
+  <section id="tab-tracking" class="customer-tab" aria-label="ติดตามส่ง">
+    <div class="tab-page-head">
+      <h2>🛵 ติดตามส่ง</h2>
+      <p>ดูตำแหน่งไรเดอร์แบบสด</p>
+    </div>
+    <div id="tracking-page" class="tracking-page"></div>
+  </section>
+
+  <!-- ===== TAB: บัญชี ===== -->
+  <section id="tab-account" class="customer-tab" aria-label="บัญชี">
+    <div class="account-page">
+      <div class="account-head">
+        <div class="account-avatar" id="account-avatar"></div>
+        <div class="account-head-info">
+          <b id="account-name">—</b>
+          <small id="account-phone">—</small>
+          <span class="acc-status" id="account-status">👤 ยังไม่ได้เข้าสู่ระบบ</span>
+        </div>
+      </div>
+      <div class="account-menu" id="account-menu"></div>
+    </div>
+  </section>
+
+  <!-- ===== ตะกร้า (เดสก์ท็อป) ===== -->
+  <aside id="cart-panel" class="cart-panel" aria-label="ตะกร้าสินค้า">
+    <div class="cart-header">
+      <h2>🛒 ตะกร้าของฉัน</h2>
+      <div class="cart-header-actions">
+        <span id="cart-count" class="cart-count">0 รายการ</span>
+        <button id="cart-close" class="checkout-close" aria-label="ปิดตะกร้า">✕</button>
+      </div>
+    </div>
+
+    <div id="cart-items" class="cart-items">
+      <div class="cart-empty">
+        <span class="cart-empty-icon">🧺</span>
+        <p>ตะกร้ายังว่างอยู่<br />เลือกเมนูอร่อย ๆ ได้เลย</p>
+      </div>
+    </div>
+
+    <div class="cart-footer">
+      <div class="cart-subtotal">
+        <span>ยอดรวมอาหาร</span>
+        <span id="cart-subtotal">฿0</span>
+      </div>
+      <div class="cart-subtotal delivery-note">
+        <span id="cart-delivery-label">ค่าจัดส่ง (ตามระยะทาง)</span>
+        <span id="cart-delivery">—</span>
+      </div>
+      <div id="cart-platform-fee" class="cart-subtotal" hidden>
+        <span id="cart-platform-fee-rate">💸 ค่าแพลตฟอร์ม</span>
+        <span id="cart-platform-fee-value">฿0</span>
+      </div>
+      <div id="cart-discount" class="cart-subtotal cart-discount-row" hidden>
+        <span>🎟️ ส่วนลดคูปอง</span>
+        <span id="cart-discount-value">−฿0</span>
+      </div>
+      <button id="checkout-btn" class="btn-checkout" disabled>สั่งซื้อ</button>
+    </div>
+  </aside>
+
+  <!-- ===== ปุ่มตะกร้าลอย (มือถือ) ===== -->
+  <button id="cart-fab" class="cart-fab" aria-label="เปิดตะกร้า">
+    🛒 <span id="fab-badge" class="fab-badge">0</span>
+  </button>
+
+  <!-- ===== ทับซ้อนมือถือ ===== -->
+  <div id="cart-overlay" class="cart-overlay" hidden></div>
+
+  <!-- ===== ฟอร์มสั่งซื้อ (checkout) ===== -->
+  <div id="checkout-overlay" class="cart-overlay" hidden></div>
+  <div id="checkout-modal" class="checkout-modal" hidden role="dialog" aria-modal="true" aria-labelledby="checkout-title">
+    <div class="checkout-head">
+      <h2 id="checkout-title">📦 ยืนยันคำสั่งซื้อ</h2>
+      <button id="checkout-close" class="checkout-close" aria-label="ปิด">✕</button>
+    </div>
+    <div class="checkout-body">
+      <div class="form-group">
+        <label for="co-name">ชื่อผู้รับ *</label>
+        <input id="co-name" type="text" maxlength="40" placeholder="ชื่อของคุณ" autocomplete="name" />
+      </div>
+      <div class="form-group">
+        <label for="co-phone">เบอร์โทร *</label>
+        <input id="co-phone" type="tel" maxlength="12" placeholder="08x-xxx-xxxx" autocomplete="tel" />
+      </div>
+      <div class="form-group">
+        <label for="co-address">ที่อยู่จัดส่ง *</label>
+        <textarea id="co-address" rows="2" maxlength="120" placeholder="บ้านเลขที่ ถนน แขวง/ตำบล เขต/อำเภอ" autocomplete="street-address"></textarea>
+        <button id="co-gps" type="button" class="btn-gps">📍 ใช้ตำแหน่งปัจจุบันของฉัน (GPS)</button>
+      </div>
+      <div class="form-group">
+        <label for="co-note">หมายเหตุ (ไม่บังคับ)</label>
+        <input id="co-note" type="text" maxlength="80" placeholder="เช่น ไม่ใส่ผัก, โทรก่อนถึง" />
+      </div>
+      <div class="form-group">
+        <label for="co-coupon">🎟️ คูปองส่วนลด</label>
+        <select id="co-coupon"></select>
+      </div>
+      <div id="co-summary" class="checkout-summary"></div>
+    </div>
+    <div class="checkout-footer">
+      <button id="co-cancel" class="btn-checkout-ghost" type="button">กลับไปแก้ตะกร้า</button>
+      <button id="co-submit" class="btn-checkout" type="button">ยืนยันสั่งซื้อ</button>
+    </div>
+  </div>
+
+  <!-- ===== ประวัติออเดอร์ของฉัน ===== -->
+  <div id="history-overlay" class="cart-overlay" hidden></div>
+  <div id="history-modal" class="checkout-modal history-modal" hidden role="dialog" aria-modal="true" aria-labelledby="history-title">
+    <div class="checkout-head">
+      <h2 id="history-title">🧾 ประวัติออเดอร์ของฉัน</h2>
+      <button id="history-close" class="checkout-close" aria-label="ปิด">✕</button>
+    </div>
+    <div class="history-body">
+      <div id="history-list" class="history-list"></div>
+      <p id="history-empty" class="history-empty" hidden>ยังไม่มีออเดอร์ — สั่งอาหารอร่อย ๆ แล้วกลับมาดูได้ที่นี่</p>
+    </div>
+  </div>
+
+  <!-- ===== ป๊อปอัปดีลเด็ด (กดดีล/โฆษณาในเมนู → เด้งขึ้นมากลางจอ ไม่ต้องออกจากหน้า) ===== -->
+  <div id="deal-overlay" class="cart-overlay" hidden></div>
+  <div id="deal-modal" class="checkout-modal deal-modal" hidden role="dialog" aria-modal="true" aria-label="รายละเอียดโปรโมชัน">
+    <div class="checkout-head">
+      <h2 id="deal-modal-title">🔥 ดีลเด็ด</h2>
+      <button id="deal-close" class="checkout-close" aria-label="ปิด">✕</button>
+    </div>
+    <div class="deal-modal-body">
+      <div id="deal-modal-hero"></div>
+      <div class="deal-modal-info">
+        <p id="deal-modal-desc"></p>
+        <details class="deal-terms">
+          <summary>📜 เงื่อนไขโปรโมชัน</summary>
+          <ul id="deal-modal-terms"></ul>
+        </details>
+        <button id="deal-modal-cta" class="deal-modal-cta" type="button">🎟️ รับคูปองส่วนลด</button>
+        <a id="deal-modal-full" class="deal-modal-full" href="#">ดูหน้านี้แบบเต็ม →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== แจ้งเตือน ===== -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- ===== แถบเมนูล่างลูกค้า (5 เมนู — component กลาง) ===== -->
+  <div id="cust-nav-mount"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="firebase-lib.js"></script>
+  <script src="menu-data.js"></script>
+  <script src="components/ui.js"></script>
+  <script src="app.js"></script>
+  <script src="customer-tabs.js"></script>
+</body>
+</html>

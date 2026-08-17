@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <!-- Dark Theme: ตั้ง data-theme จาก localStorage ก่อน CSS วาด (กันจอวาบ) -->
+  <script>try{(function(){var k="sangkha-theme",ss=localStorage.getItem("sangkha-store-session");if(ss){try{var o=JSON.parse(ss);k="sangkha-theme:store:"+(o&&o.id!=null?o.id:"x")}catch(e){k="sangkha-theme:store"}}else if(localStorage.getItem("sangkha-rider")){k="sangkha-theme:rider:"+localStorage.getItem("sangkha-rider")}else if(localStorage.getItem("sangkha-admin-session")){k="sangkha-theme:admin"}else if(localStorage.getItem("sangkha-customer-session")){k="sangkha-theme:customer:"+localStorage.getItem("sangkha-customer-session")}if(localStorage.getItem(k)==="dark")document.documentElement.setAttribute("data-theme","dark")})()}catch(e){}</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>จัดการร้านค้า — ครัวสังขา</title>
+  <link rel="icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles/design-system.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <!-- ===== หัวหน้า ===== -->
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <div class="admin-title-row">
+        <a class="btn-back" href="index.html" aria-label="กลับหน้าร้าน">←</a>
+        <div>
+          <h1>⚙️ จัดการร้านค้า</h1>
+          <p class="admin-subtitle" id="admin-subtitle">เพิ่ม แก้ไข หรือลบสินค้าในเมนู</p>
+        </div>
+      </div>
+      <!-- ปุ่มลัดหัวบนถูกลบแล้ว — มีในแดชบอร์ดหมวดแล้ว (เพิ่มสินค้าอยู่ในหมวดเมนู) -->
+    </div>
+  </header>
+
+  <!-- ===== เข้าสู่ระบบร้านค้า / แอดมิน (สไตล์เดียวกับหน้า Sangkha Partner) ===== -->
+  <div id="admin-login" class="admin-login">
+    <div class="auth-hero">
+      <div class="auth-logo" aria-hidden="true">🛡️</div>
+      <div class="auth-brand">Sangkha <span>Admin</span></div>
+      <p class="auth-welcome">เข้าสู่ระบบเพื่อจัดการร้านค้า ไรเดอร์ และการเงินของแพลตฟอร์ม</p>
+    </div>
+
+    <div class="auth-card admin-login-card">
+      <!-- ===== ล็อกอินร้านค้า ===== -->
+      <div class="admin-login-sec">
+        <div class="form-group">
+          <label for="store-login-name">📱 ชื่อร้าน</label>
+          <input id="store-login-name" class="auth-input" type="text" maxlength="40" placeholder="พิมพ์ชื่อตรงกับหน้าร้าน เช่น ครัวสังขา" autocomplete="organization" aria-label="ชื่อร้าน" />
+        </div>
+        <div class="form-group">
+          <label for="store-login-pin">🔒 PIN ร้าน <small>ร้านพื้นฐานเริ่มต้น 1234</small></label>
+          <input id="store-login-pin" class="auth-input" type="password" maxlength="10" inputmode="numeric" placeholder="PIN ร้าน" autocomplete="current-password" aria-label="PIN ร้าน" />
+        </div>
+        <button id="store-login-btn" class="btn-primary login-ripple" type="button">🚪 เข้าสู่ระบบร้าน</button>
+      </div>
+
+      <div class="admin-login-divider"><span>หรือ</span></div>
+
+      <!-- ===== ล็อกอินแอดมิน ===== -->
+      <div class="admin-login-sec">
+        <div class="form-group">
+          <label for="admin-login-pin">🛡️ PIN แอดมิน</label>
+          <input id="admin-login-pin" class="auth-input" type="password" maxlength="20" placeholder="PIN แอดมินของแพลตฟอร์ม" autocomplete="current-password" aria-label="PIN แอดมิน" />
+        </div>
+        <button id="admin-login-btn" class="btn-primary admin-login-admin-btn login-ripple" type="button">🛡️ เข้าสู่ระบบแอดมิน</button>
+      </div>
+    </div>
+
+    <div class="auth-links admin-login-links">
+      <a class="auth-link" href="login.html">📱 Sangkha Partner (ร้านค้า) →</a>
+      <a class="auth-link" href="index.html">กลับหน้าร้าน</a>
+    </div>
+  </div>
+  <div id="admin-active" class="admin-active" hidden>
+    <label>กำลังใช้งานเป็น</label>
+    <b id="admin-active-name">—</b>
+    <button id="admin-logout" type="button">🚪 ออกจากระบบ</button>
+  </div>
+
+  <!-- ===== แดชบอร์ดแอดมิน (หมวดหมู่ — แทนหน้าเรียงยาว) ===== -->
+  <div id="admin-home">
+    <div class="admin-home-head">
+      <h2>ภาพรวมแพลตฟอร์ม</h2>
+      <p>อัปเดตอัตโนมัติทุกครั้งที่เปิดหน้า</p>
+    </div>
+    <div class="admin-summary">
+      <div class="admin-summary-card"><b id="sum-orders">0</b><span>ออเดอร์ทั้งหมด</span></div>
+      <div class="admin-summary-card"><b id="sum-restaurants">0</b><span>ร้านค้า</span></div>
+      <div class="admin-summary-card"><b id="sum-riders">0</b><span>ไรเดอร์</span></div>
+      <div class="admin-summary-card"><b id="sum-customers">0</b><span>ลูกค้า</span></div>
+      <div class="admin-summary-card admin-summary-sales"><b id="sum-sales-today">฿0</b><span>ยอดขายวันนี้</span></div>
+    </div>
+    <div class="admin-cats" id="admin-cats"><!-- การ์ดหมวด render โดย admin.js --></div>
+  </div>
+
+  <!-- ===== หมวดต่าง ๆ (เปิดจากการ์ดบนแดชบอร์ด) ===== -->
+  <div id="admin-cat-view" hidden>
+    <div class="admin-cat-head">
+      <button id="admin-cat-back" class="btn-ghost btn-sm" type="button">← หน้าหลัก</button>
+      <h2 id="admin-cat-title">—</h2>
+    </div>
+    <div class="admin-cat-group" data-group="restaurants">
+
+  <!-- ===== เลือกร้านค้าที่จะจัดการ (เฉพาะแอดมิน) ===== -->
+  <div class="admin-restaurant-bar">
+    <label for="restaurant-select">เลือกจัดการร้าน</label>
+    <select id="restaurant-select"></select>
+  </div>
+
+  <!-- ===== ปิดรับออเดอร์ชั่วคราว (ร้านตั้งเอง — ไม่กระทบเวลาเปิด-ปิด) ===== -->
+  <div id="close-panel" class="admin-fee-panel">
+    <div class="admin-fee-head">
+      <b>🛎️ สถานะรับออเดอร์</b>
+      <span id="close-badge" class="admin-fee-badge"></span>
+    </div>
+    <p id="close-note" class="admin-fee-note"></p>
+    <input id="close-reason" type="text" maxlength="60" placeholder="เหตุผลที่ปิดชั่วคราว (ไม่บังคับ — ลูกค้าเห็น)" hidden />
+    <button id="close-toggle" type="button" class="btn-primary"></button>
+    <div class="auto-close-row">
+      <label class="auto-close-toggle">
+        <input type="checkbox" id="close-auto" />
+        <span>🤖 ปิดอัตโนมัติเมื่อออเดอร์ค้าง</span>
+      </label>
+      <label class="auto-close-threshold">≥
+        <input id="close-auto-n" type="number" min="1" max="99" value="5" aria-label="จำนวนออเดอร์ค้างที่ปิดอัตโนมัติ" /> ใบ
+      </label>
+    </div>
+    <p id="close-auto-note" class="admin-fee-note" hidden></p>
+  </div>
+
+
+  <!-- ===== แก้ไขข้อมูลร้าน (เฉพาะแอดมิน — ร้านสมัครผิดแล้วแก้เองไม่ได้) ===== -->
+  <div id="store-edit-panel" class="admin-fee-panel" hidden>
+    <div class="admin-fee-head">
+      <b>🏪 แก้ไขข้อมูลร้าน</b>
+      <span id="store-edit-badge" class="admin-fee-badge"></span>
+      <button id="se-preview" type="button" class="btn-ghost btn-sm">👁️ ดูตัวอย่างหน้าร้าน</button>
+    </div>
+    <div class="admin-fee-row">
+      <select id="store-edit-restaurant" aria-label="เลือกร้านที่แก้ไขข้อมูล"></select>
+    </div>
+    <div class="admin-fee-row">
+      <span class="store-edit-field-label">โลโก้ (อีโมจิ)</span>
+      <div id="se-emoji-picker" class="store-edit-emoji" role="listbox" aria-label="เลือกโลโก้ร้าน"></div>
+    </div>
+    <div class="admin-fee-row">
+      <span class="store-edit-field-label">สีพื้นหลังโลโก้</span>
+      <div id="se-bg-picker" class="bg-picker" role="radiogroup" aria-label="เลือกสีพื้นหลัง"></div>
+    </div>
+    <div class="admin-fee-row store-edit-fields">
+      <label for="se-name">ชื่อร้าน</label>
+      <input id="se-name" type="text" maxlength="40" aria-label="ชื่อร้าน" />
+      <label for="se-cuisine">ประเภท</label>
+      <input id="se-cuisine" type="text" maxlength="40" aria-label="ประเภทอาหาร" />
+      <label for="se-ad-category">🏷️ หมวดโฆษณาร้าน (ร้านตั้งเองได้ — แอดมินแก้ให้ตรง)</label>
+      <select id="se-ad-category" aria-label="หมวดโฆษณาร้าน">
+        <option value="">ทุกหมวด (โชว์ทุกหน้า)</option>
+        <option value="เบอร์เกอร์">🍔 เบอร์เกอร์</option>
+        <option value="เครื่องดื่ม">🧋 เครื่องดื่ม</option>
+        <option value="ซูชิ">🍣 ซูชิ / ญี่ปุ่น</option>
+        <option value="พิซซ่า">🍕 พิซซ่า / อิตาเลียน</option>
+        <option value="ของหวาน">🍰 ของหวาน</option>
+        <option value="อาหารไทย">🍜 อาหารไทย</option>
+        <option value="ฟาสต์ฟู้ด">🍗 ฟาสต์ฟู้ด</option>
+      </select>
+      <label for="se-open">เปิด</label>
+      <input id="se-open" type="time" aria-label="เวลาเปิด" />
+      <label for="se-close">ปิด</label>
+      <input id="se-close" type="time" aria-label="เวลาปิด" />
+    </div>
+    <div class="admin-fee-row store-edit-fields">
+      <label for="se-img">รูปหน้าร้าน (URL ภาพ)</label>
+      <input id="se-img" type="url" placeholder="https://... (ว่าง = ใช้ภาพ AI/โลโก้อัตโนมัติ)" aria-label="URL รูปหน้าร้าน" />
+      <label for="se-address">ที่อยู่</label>
+      <input id="se-address" type="text" maxlength="120" aria-label="ที่อยู่ร้าน" />
+      <label for="se-distance">ระยะทาง กม.</label>
+      <input id="se-distance" type="number" min="0.1" step="0.1" inputmode="decimal" aria-label="ระยะทาง (กม.)" />
+      <label for="se-fee">ค่าส่ง ฿</label>
+      <input id="se-fee" type="number" min="0" step="1" inputmode="decimal" aria-label="ค่าส่ง (บาท)" />
+      <label for="se-free">ส่งฟรีขั้นต่ำ ฿</label>
+      <input id="se-free" type="number" min="0" step="1" inputmode="decimal" aria-label="ขั้นต่ำส่งฟรี (บาท)" />
+      <label for="se-time">เวลาจัดส่ง</label>
+      <input id="se-time" type="text" maxlength="20" aria-label="เวลาจัดส่ง" />
+    </div>
+    <div class="admin-fee-row store-edit-fields">
+      <label for="se-lat">พิกัด Lat</label>
+      <input id="se-lat" type="number" step="any" inputmode="decimal" aria-label="ละติจูด" />
+      <label for="se-lng">พิกัด Lng</label>
+      <input id="se-lng" type="number" step="any" inputmode="decimal" aria-label="ลองจิจูด" />
+      <button id="se-save" class="btn-primary btn-sm">💾 บันทึก</button>
+      <button id="se-reset" class="btn-ghost btn-sm">คืนค่าเดิม</button>
+      <button id="se-delete" class="btn-danger btn-sm" hidden>🗑️ ลบร้านสมัคร</button>
+    </div>
+    <p id="store-edit-note" class="admin-fee-note">ร้านสมัครผิดแล้วแก้เองไม่ได้ — แอดมินแก้ให้ (ส่งผลทั้งหน้าร้าน/หลังร้านทันที) — ร้านที่สมัครลบได้ด้วยปุ่ม 🗑️ (ลบจาก Firestore + เครื่องทั้งหมด)</p>
+  </div>
+
+  <!-- ===== รีเซ็ต PIN ร้าน (เฉพาะแอดมิน — เมื่อร้านลืมรหัส) ===== -->
+  <div id="pin-panel" class="admin-fee-panel" hidden>
+    <div class="admin-fee-head">
+      <b>🔑 รีเซ็ต PIN ร้าน</b>
+      <span id="pin-effective" class="admin-fee-badge"></span>
+    </div>
+    <div class="admin-fee-row">
+      <select id="pin-restaurant" aria-label="เลือกร้านที่รีเซ็ต PIN"></select>
+      <input id="pin-new" type="password" maxlength="10" placeholder="PIN ใหม่ (อย่างน้อย 4 ตัว)" aria-label="PIN ใหม่" />
+      <button id="pin-save" class="btn-primary btn-sm">💾 บันทึก PIN ใหม่</button>
+    </div>
+    <p id="pin-note" class="admin-fee-note">ใช้เมื่อร้านลืมรหัส — ตั้ง PIN ใหม่ แล้วแจ้งร้านให้ล็อกอินด้วย PIN ใหม่ (ร้านพื้นฐานเริ่มต้น 1234)</p>
+  </div>
+  </div><!-- /.restaurants -->
+
+  <!-- ===== หมวด เมนู ===== -->
+  <div class="admin-cat-group" data-group="menu">
+
+  <!-- ===== เมนูรออนุมัติ (เฉพาะแอดมิน) ===== -->
+  <div id="pending-panel" class="admin-fee-panel" hidden>
+    <div class="admin-fee-head">
+      <b>🕐 เมนูรออนุมัติ</b>
+      <span id="pending-count" class="admin-fee-badge">0 รายการ</span>
+    </div>
+    <div id="pending-list" class="pending-list"></div>
+    <p id="pending-empty" class="admin-fee-note">ไม่มีเมนูรออนุมัติ — เมื่อร้านค้าส่งเพิ่ม/แก้/ลบเมนู จะขึ้นที่นี่ให้อนุมัติ</p>
+  </div>
+
+  <!-- ===== สถิติ ===== -->
+  <main class="admin-main">
+    <div class="stats-row">
+      <div class="stat-card"><b id="stat-total">0</b><span>สินค้าทั้งหมด</span></div>
+      <div class="stat-card"><b id="stat-categories">0</b><span>หมวดหมู่</span></div>
+      <div class="stat-card"><b id="stat-min-price">฿0</b><span>ราคาต่ำสุด</span></div>
+    </div>
+
+    <!-- ===== รายการสินค้า ===== -->
+    <section class="products-section">
+      <div class="products-head">
+        <h2>รายการสินค้า</h2>
+        <button id="btn-add" class="btn-primary btn-sm" type="button">＋ เพิ่มสินค้า</button>
+        <a class="link-store" href="index.html">ดูหน้าร้าน →</a>
+      </div>
+      <p id="store-pending-note" class="store-pending-note" hidden></p>
+
+      <div id="product-list" class="product-list"></div>
+      <p id="empty-state" class="empty-state" hidden>ยังไม่มีสินค้า — กด "เพิ่มสินค้า" เพื่อเริ่มต้น</p>
+    </section>
+  </main>
+  </div><!-- /.menu -->
+
+  <!-- ===== หมวด ออเดอร์ ===== -->
+  <div class="admin-cat-group" data-group="orders">
+    <div id="admin-orders-summary" class="admin-fee-panel"><!-- render โดย admin.js --></div>
+  </div>
+
+  <!-- ===== หมวด ลูกค้า ===== -->
+  <div class="admin-cat-group" data-group="customers">
+    <div id="admin-customers-summary" class="admin-fee-panel"><!-- render โดย admin.js --></div>
+  </div>
+
+  <!-- ===== หมวด ไรเดอร์ ===== -->
+  <div class="admin-cat-group" data-group="riders">
+
+  <!-- ===== ไรเดอร์ประจำร้าน (whitelist) ===== -->
+  <div class="admin-rider-panel">
+    <div class="admin-rider-head">
+      <b>🛵 ไรเดอร์ประจำร้าน</b>
+      <span id="rider-whitelist-summary" class="admin-rider-summary"></span>
+    </div>
+    <div id="rider-whitelist" class="rider-whitelist" role="group" aria-label="เลือกไรเดอร์ประจำร้าน"></div>
+    <p class="admin-rider-note">งานจากร้านนี้จะขึ้นเฉพาะไรเดอร์ที่เลือกใน Rider Dashboard — ไม่เลือกใคร = ไรเดอร์ทุกคนเห็นงานของร้านนี้ (ลงทะเบียนไรเดอร์ได้ที่หน้า Rider Dashboard)</p>
+  </div>
+  </div><!-- /.riders -->
+
+  <!-- ===== หมวด การเงิน ===== -->
+  <div class="admin-cat-group" data-group="finance">
+
+  <!-- ===== ค่าธรรมเนียมร้านนี้ ===== -->
+  <div class="admin-fee-panel">
+    <div class="admin-fee-head">
+      <b>💸 ค่าธรรมเนียมร้านนี้</b>
+      <span id="fee-effective" class="admin-fee-badge"></span>
+    </div>
+    <div class="admin-fee-row">
+      <input id="rest-fee-rate" type="number" min="0" max="90" step="0.5" inputmode="decimal" placeholder="เช่น 10" aria-label="อัตราค่าธรรมเนียมร้านนี้ (%)" />
+      <span class="admin-fee-suffix">%</span>
+      <button id="rest-fee-save" class="btn-primary btn-sm">บันทึก</button>
+      <button id="rest-fee-clear" class="btn-ghost btn-sm">ใช้ค่าเริ่มต้น (รวม)</button>
+    </div>
+    <p id="rest-fee-note" class="admin-fee-note"></p>
+  </div>
+
+  <!-- ===== ค่าจัดส่งตามระยะทาง ===== -->
+  <div class="admin-fee-panel">
+    <div class="admin-fee-head">
+      <b>🛵 ค่าจัดส่งตามระยะทาง</b>
+      <span id="delivery-note-badge" class="admin-fee-badge"></span>
+    </div>
+    <div class="admin-fee-row">
+      <label for="del-base">ค่าเริ่มต้น</label>
+      <input id="del-base" type="number" min="0" step="1" inputmode="decimal" aria-label="ค่าเริ่มต้นค่าส่ง (บาท)" />
+      <span class="admin-fee-suffix">฿</span>
+      <label for="del-perkm">ต่อ กม.</label>
+      <input id="del-perkm" type="number" min="0" step="0.5" inputmode="decimal" aria-label="ค่าส่งต่อกิโลเมตร (บาท)" />
+      <span class="admin-fee-suffix">฿</span>
+      <label for="del-free">ส่งฟรีขั้นต่ำ</label>
+      <input id="del-free" type="number" min="0" step="1" inputmode="decimal" aria-label="ยอดขั้นต่ำส่งฟรี (บาท)" />
+      <span class="admin-fee-suffix">฿</span>
+      <button id="del-save" class="btn-primary btn-sm">บันทึก</button>
+      <button id="del-reset" class="btn-ghost btn-sm">คืนค่าเริ่มต้น</button>
+    </div>
+    <p id="delivery-note" class="admin-fee-note"></p>
+  </div>
+
+  <!-- ===== ภาษีหัก ณ ที่จ่ายไรเดอร์ (เฉพาะแอดมิน) ===== -->
+  <div id="wht-panel" class="admin-fee-panel">
+    <div class="admin-fee-head">
+      <b>🧾 ภาษีหัก ณ ที่จ่ายไรเดอร์</b>
+      <span id="wht-effective" class="admin-fee-badge"></span>
+    </div>
+    <div class="admin-fee-row">
+      <label for="wht-default">ค่าเริ่มต้น</label>
+      <input id="wht-default" type="number" min="0" max="20" step="0.5" inputmode="decimal" aria-label="อัตราภาษีหัก ณ ที่จ่ายค่าเริ่มต้น (%)" />
+      <span class="admin-fee-suffix">%</span>
+      <button id="wht-default-save" class="btn-primary btn-sm">บันทึก</button>
+    </div>
+    <p class="admin-fee-note">อัตราที่หักจากรายได้ไรเดอร์ตอนคำนวณสลิปรายเดือน — กฎเฉพาะร้าน/ช่วงเวลาด้านล่างมีผลก่อนค่าเริ่มต้น</p>
+    <div id="wht-rules" class="wht-rules"></div>
+    <div class="wht-add-row">
+      <select id="wht-rule-restaurant" aria-label="ร้านที่ใช้กฎ"></select>
+      <input id="wht-rule-rate" type="number" min="0" max="20" step="0.5" inputmode="decimal" placeholder="อัตรา %" aria-label="อัตรา (%)" />
+      <input id="wht-rule-start" type="datetime-local" aria-label="เริ่มใช้ (ไม่บังคับ)" />
+      <input id="wht-rule-end" type="datetime-local" aria-label="สิ้นสุด (ไม่บังคับ)" />
+      <button id="wht-rule-add" class="btn-primary btn-sm">＋ เพิ่มกฎ</button>
+    </div>
+    <p class="admin-fee-note">ตัวอย่าง: กฎ 5% เฉพาะ "ครัวสังขา" ระหว่าง 1–15 ส.ค. — งานของร้านนั้นที่ส่งเสร็จในงวดนี้จะหัก 5% (กฎเฉพาะร้านชนะทุกที่ / ช่วงเวลาที่ระบุชนะไม่จำกัดช่วง / ไม่ตรงกฎไหน = ค่าเริ่มต้น)</p>
+  </div>
+  </div><!-- /.finance -->
+
+  <!-- ===== หมวด ระบบ (โฆษณา + รีวิว) ===== -->
+  <div class="admin-cat-group" data-group="system">
+
+  <!-- ===== จัดการโฆษณา ===== -->
+  <section class="products-section ads-section">
+    <div class="products-head">
+      <h2>โฆษณา (สไลด์บนสุด)</h2>
+      <span id="ad-total-clicks" class="ad-total-clicks"></span>
+      <button id="btn-add-ad" class="btn-primary btn-sm">＋ เพิ่มโฆษณา</button>
+    </div>
+    <div id="ad-list" class="ad-list"></div>
+    <p id="ad-empty" class="empty-state" hidden>ยังไม่มีโฆษณา — กด "เพิ่มโฆษณา" เพื่อเริ่มต้น</p>
+  </section>
+
+  <!-- ===== รีวิวจากลูกค้า (ดู + ตอบกลับ) ===== -->
+  <section class="products-section reviews-section">
+    <div class="products-head">
+      <h2>รีวิวจากลูกค้า</h2>
+      <span id="rev-summary" class="ad-total-clicks"></span>
+    </div>
+    <div id="review-list" class="review-list"></div>
+    <p id="review-empty" class="empty-state" hidden>ยังไม่มีรีวิว — เมื่อลูกค้าให้คะแนนหลังออเดอร์เสร็จสิ้น จะขึ้นที่นี่</p>
+  </section>
+  </div><!-- /.system -->
+  </div><!-- /#admin-cat-view -->
+
+  <!-- ===== แบบฟอร์มเพิ่ม/แก้สินค้า ===== -->
+  <div id="modal-overlay" class="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head">
+        <h2 id="modal-title">เพิ่มสินค้า</h2>
+        <button id="modal-close" class="modal-close" aria-label="ปิด">✕</button>
+      </div>
+
+      <form id="product-form" novalidate>
+        <input type="hidden" id="f-id" />
+
+        <div class="form-group">
+          <label for="f-img">รูปอาหารจริง (ถ่ายหรือเลือกจากเครื่อง)</label>
+          <div class="img-upload" id="img-upload" role="button" tabindex="0" aria-label="เลือกหรือถ่ายรูปอาหาร">
+            <input type="file" id="f-img" accept="image/*" hidden />
+            <div class="img-upload-preview" id="img-upload-preview">
+              <span class="img-upload-placeholder">📷<br />แตะเพื่อถ่าย / เลือกภาพ</span>
+            </div>
+          </div>
+          <button type="button" id="btn-ai-img" class="btn-ai-img">✨ ตกแต่งรูปด้วย AI</button>
+          <button type="button" id="btn-adjust-food-img" class="btn-ai-img btn-ai-adjust" hidden>🎨 ปรับภาพเดิม</button>
+          <select id="adjust-food-style" class="ai-adjust-style" hidden aria-label="เลือกแบบปรับภาพ">
+            <option value="auto">🔄 สลับไปเรื่อย ๆ</option>
+            <option value="color">🎨 สีสดขึ้น</option>
+            <option value="close">🔍 ใกล้ขึ้น</option>
+            <option value="clean">🧹 พื้นหลังสะอาดขึ้น</option>
+            <option value="light">💡 แสงสวยขึ้น</option>
+            <option value="plate">🍽️ จัดจานสวยขึ้น</option>
+          </select>
+          <button type="button" id="btn-remove-img" class="btn-remove-img" hidden>✕ ลบรูป</button>
+          <p class="form-hint">ถ่ายรูปจริงแล้วกด ✨ AI ได้ — AI วาดภาพอาหารสวย ๆ ตามชื่อ/หมวด/คำอธิบาย ให้เลือกใช้แทนหรือเปรียบเทียบกับรูปที่ถ่าย (ใช้ได้กับร้านที่ถ่ายรูปไม่สวย) — ✨ วาด = ภาพใหม่ทั้งหมด / 🎨 ปรับภาพเดิม = วาดใหม่ด้วย seed เดิมให้ใกล้เคียงแต่สวยขึ้น — **เลือกได้ว่าจะปรับแบบไหน** (สีสดขึ้น / ใกล้ขึ้น / พื้นหลังสะอาดขึ้น / แสงสวยขึ้น / จัดจานสวยขึ้น — หรือปล่อย "สลับไปเรื่อย ๆ" = ปรับสลับหลายแบบทุกครั้งที่กด) — ถ้าไม่อัปโหลดรูปเลย ให้เลือกรูปอีโมจิแทนได้ด้านล่าง</p>
+        </div>
+
+        <div class="form-group">
+          <label>เลือกรูปอีโมจิ (ใช้เมื่อไม่มีรูปจริง)</label>
+          <div id="emoji-picker" class="emoji-picker" role="listbox" aria-label="เลือกรูปอีโมจิ"></div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="f-name">ชื่อสินค้า *</label>
+            <input id="f-name" type="text" placeholder="เช่น ข้าวผัดกุ้ง" maxlength="40" required />
+          </div>
+          <div class="form-group form-group-price">
+            <label for="f-price">ราคา (บาท) *</label>
+            <input id="f-price" type="number" min="1" step="1" placeholder="95" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="f-category">หมวดหมู่</label>
+          <select id="f-category"></select>
+        </div>
+
+        <div class="form-group">
+          <label for="f-desc">คำอธิบาย</label>
+          <textarea id="f-desc" rows="2" maxlength="120" placeholder="รายละเอียดเมนูสั้น ๆ (ไม่บังคับ)"></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="btn-cancel" class="btn-ghost">ยกเลิก</button>
+          <button type="submit" id="btn-save" class="btn-primary">บันทึกสินค้า</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== แบบฟอร์มเพิ่ม/แก้โฆษณา ===== -->
+  <div id="ad-modal-overlay" class="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ad-modal-title">
+      <div class="modal-head">
+        <h2 id="ad-modal-title">เพิ่มโฆษณา</h2>
+        <button id="ad-modal-close" class="modal-close" aria-label="ปิด">✕</button>
+      </div>
+
+      <form id="ad-form" novalidate>
+        <input type="hidden" id="af-id" />
+
+        <div class="form-group">
+          <label>ไอคอน (อีโมจิ)</label>
+          <div id="ad-emoji-picker" class="emoji-picker" role="listbox" aria-label="เลือกไอคอนโฆษณา"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="af-category">🏷️ หมวดโฆษณา (สไลด์หน้าแรกโชว์เฉพาะหมวดที่ตรงร้านที่ลูกค้าติดตาม/ใกล้ตัว — "ทุกหมวด" = โชว์ทุกหน้า)</label>
+          <select id="af-category">
+            <option value="">ทุกหมวด (โชว์ทุกหน้า)</option>
+            <option value="เบอร์เกอร์">🍔 เบอร์เกอร์</option>
+            <option value="เครื่องดื่ม">🧋 เครื่องดื่ม</option>
+            <option value="ซูชิ">🍣 ซูชิ / ญี่ปุ่น</option>
+            <option value="พิซซ่า">🍕 พิซซ่า / อิตาเลียน</option>
+            <option value="ของหวาน">🍰 ของหวาน</option>
+            <option value="อาหารไทย">🍜 อาหารไทย</option>
+            <option value="ฟาสต์ฟู้ด">🍗 ฟาสต์ฟู้ด</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>🖼️ รูปสินค้าจริงแทนไอคอน (โหลด/ถ่ายรูป — สไลด์แสดงรูปแทนอีโมจิ)</label>
+          <div class="img-upload img-upload-sm" id="ad-icon-upload" role="button" tabindex="0" aria-label="เลือกหรือถ่ายรูปสินค้าจริงแทนไอคอนอีโมจิ">
+            <input type="file" id="af-icon-img" accept="image/*" hidden />
+            <div class="img-upload-preview" id="ad-icon-preview">
+              <span class="img-upload-placeholder">📷<br />แตะเพื่อถ่าย / เลือกภาพ</span>
+            </div>
+          </div>
+          <button type="button" id="btn-clear-ad-icon" class="btn-remove-img" hidden>✕ ลบรูปไอคอน</button>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="af-title">หัวข้อ *</label>
+            <input id="af-title" type="text" maxlength="40" placeholder="เช่น เบอร์เกอร์ซื้อ 1 แถม 1" required />
+          </div>
+          <div class="form-group">
+            <label for="af-cta">ปุ่มข้อความ</label>
+            <input id="af-cta" type="text" maxlength="20" placeholder="ดูโปรโมชัน" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="af-title-anim">🎬 แอนิเมชันหัวข้อ (สไลด์บนสุด / การ์ดดีลเด็ด / หน้าโปรโมชัน)</label>
+          <select id="af-title-anim">
+            <option value="none">ไม่มี (ปกติ)</option>
+            <option value="blink">💡 กระพริบ (blink)</option>
+            <option value="pulse">✨ วิ้งเข้า-ออก (pulse)</option>
+            <option value="bounce">🏀 เด้งขึ้นลง (bounce)</option>
+            <option value="swing">🎐 โยกซ้าย-ขวา (swing)</option>
+            <option value="zoom">🔍 ซูมวิ้ง (zoom)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="af-desc">รายละเอียด</label>
+          <textarea id="af-desc" rows="2" maxlength="120" placeholder="ข้อความโฆษณา (ไม่บังคับ)"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>สีพื้นหลัง</label>
+          <div class="bg-picker" id="bg-picker" role="radiogroup" aria-label="เลือกสีพื้นหลัง"></div>
+        </div>
+
+        <div class="form-group">
+          <label>✨ แบนเนอร์ AI (ภาพพื้นหลังตามหัวข้อโฆษณา)</label>
+          <div class="ai-banner-preview" id="ai-banner-preview" hidden></div>
+          <div class="ai-banner-actions">
+            <button type="button" id="btn-ai-banner" class="btn-ai-img">✨ AI วาดแบนเนอร์</button>
+            <button type="button" id="btn-adjust-banner" class="btn-ai-img btn-ai-adjust" hidden>🎨 ปรับภาพเดิม</button>
+            <select id="adjust-banner-style" class="ai-adjust-style" hidden aria-label="เลือกแบบปรับแบนเนอร์">
+              <option value="auto">🔄 สลับไปเรื่อย ๆ</option>
+              <option value="color">🎨 สีสดขึ้น</option>
+              <option value="close">🔍 ใกล้ขึ้น</option>
+              <option value="clean">🧹 พื้นหลังสะอาดขึ้น</option>
+              <option value="light">💡 แสงสวยขึ้น</option>
+              <option value="plate">🍽️ จัดองค์ประกอบสวยขึ้น</option>
+            </select>
+            <button type="button" id="btn-clear-ai-banner" class="btn-remove-img" hidden>✕ ลบภาพ AI</button>
+          </div>
+          <p class="form-hint">AI วาดภาพพื้นหลังโฆษณาตามหัวข้อ + รายละเอียด + ช่องข้อความที่กรอก — ใช้แทนพื้นสีไล่ gradient (สีที่เลือกยังเป็นตัวสำรองถ้าภาพโหลดไม่ได้) — ✨ วาด = ภาพใหม่ทั้งหมด / 🎨 ปรับภาพเดิม = วาดใหม่ด้วย seed เดิมให้ใกล้เคียงแต่สวยขึ้น — **เลือกได้ว่าจะปรับแบบไหน** (สีสดขึ้น / ใกล้ขึ้น / พื้นหลังสะอาดขึ้น / แสงสวยขึ้น / จัดองค์ประกอบสวยขึ้น — หรือ "สลับไปเรื่อย ๆ" = ปรับสลับหลายแบบทุกครั้งที่กด)</p>
+        </div>
+
+        <div class="form-group">
+          <label>📷 รูปจริงที่จะประกอบ (รูปสินค้า/โลโก้ — AI วาดพื้นหลัง แล้วระบบวางรูปจริงลงบนแบนเนอร์ให้ดูเป็นโฆษณามืออาชีพ)</label>
+          <div class="img-upload img-upload-sm" id="ai-ref-upload" role="button" tabindex="0" aria-label="เลือกหรือถ่ายรูปจริงที่จะประกอบลงแบนเนอร์">
+            <input type="file" id="af-ref-img" accept="image/*" hidden />
+            <div class="img-upload-preview" id="ai-ref-preview">
+              <span class="img-upload-placeholder">📷<br />แตะเพื่อถ่าย / เลือกภาพ</span>
+            </div>
+          </div>
+          <button type="button" id="btn-clear-ai-ref" class="btn-remove-img" hidden>✕ ลบรูปจริง</button>
+        </div>
+
+        <div class="form-group">
+          <label for="af-ai-text">✍️ ข้อความ/โจทย์ให้ AI (วาดพื้นหลังตามนี้ — ใช้ประกอบกับหัวข้อ + รายละเอียด)</label>
+          <textarea id="af-ai-text" rows="2" maxlength="200" placeholder="เช่น เบอร์เกอร์ชีสกับเฟรนช์ฟรายส์ บนโต๊ะไม้โทนอบอุ่น แสงยามเย็น"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="ai-motion-label"><input type="checkbox" id="af-motion" /> 🎬 เจนเป็นภาพเคลื่อนไหว — หน้าร้านเล่นแบบซูม/พาโนรามา + ตัวหนังสือเข้าฉาก + แสงวิ่งผ่าน (ดูเป็นคลิปโฆษณา)</label>
+        </div>
+
+        <div class="form-group">
+          <label for="af-video">คลิปวิดีโอ (ลิงก์ mp4/webm หรือชื่อไฟล์ในโฟลเดอร์)</label>
+          <input id="af-video" type="text" maxlength="200" placeholder="วางลิงก์ https://.../คลิป.mp4 หรือชื่อไฟล์ เช่น promo-burger (วาง promo-burger.mp4/.webm ในโฟลเดอร์)" />
+          <p class="form-hint">เว้นว่าง = ใช้พื้นสี + อีโมจิแทน — วางลิงก์เต็มจะเล่นจากเว็บตรง ๆ ไม่ต้องวางไฟล์ — ใส่ชื่อไฟล์เฉย ๆ ระบบจะหาจากโฟลเดอร์ (เติม .mp4/.webm ให้อัตโนมัติ)</p>
+          <p id="af-video-warn" class="form-warn" hidden>⚠️ วิดีโอนี้โหลดไม่ได้ (ลิงก์เสีย / ไม่มีไฟล์ในโฟลเดอร์) — ตรวจ URL หรือชื่อไฟล์ให้ถูกต้อง หรือเว้นว่างไว้ก่อน</p>
+        </div>
+
+        <div class="form-group">
+          <label for="af-terms">เงื่อนไขโปรโมชัน (แสดงในหน้าโปรโมชันเต็ม)</label>
+          <textarea id="af-terms" rows="3" maxlength="300" placeholder="แต่ละข้อคั่นด้วย | เช่น ระยะเวลาจำกัด 1 สัปดาห์ | ไม่รวมเครื่องดื่ม | สิทธิ์เฉพาะสมาชิก"></textarea>
+          <p class="form-hint">เว้นว่าง = ใช้เงื่อนไขมาตรฐาน</p>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="af-discount-type">🎟️ คูปองส่วนลด</label>
+            <select id="af-discount-type">
+              <option value="percent">เปอร์เซ็นต์ (%)</option>
+              <option value="baht">จำนวนเงิน (บาท)</option>
+              <option value="delivery">ส่งฟรี</option>
+              <option value="">ไม่มีคูปอง</option>
+            </select>
+          </div>
+          <div class="form-group form-group-price">
+            <label for="af-discount-value">มูลค่าส่วนลด</label>
+            <input id="af-discount-value" type="number" min="0" step="1" placeholder="เช่น 50" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="af-min-order">ขั้นต่ำการสั่งซื้อ (บาท) — 0 = ไม่จำกัด</label>
+          <input id="af-min-order" type="number" min="0" step="1" placeholder="เช่น 199" />
+          <p class="form-hint">คูปองจะใช้ได้เฉพาะออเดอร์ที่ถึงขั้นต่ำนี้</p>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="af-start-at">🕐 เริ่มออกอากาศ</label>
+            <input id="af-start-at" type="datetime-local" />
+            <p class="form-hint">เว้นว่าง = เริ่มทันทีเมื่อบันทึก</p>
+          </div>
+          <div class="form-group">
+            <label for="af-end-at">⏰ สิ้นสุดออกอากาศ</label>
+            <input id="af-end-at" type="datetime-local" />
+            <p class="form-hint">เว้นว่าง = ไม่หมดอายุ</p>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>⚡ ตั้งเร็ว (คลิกเดียว)</label>
+          <div class="quick-range" role="group" aria-label="ตั้งช่วงเวลาออกอากาศแบบเร็ว">
+            <button type="button" class="quick-range-btn" data-hours="1">1 ชม.</button>
+            <button type="button" class="quick-range-btn" data-hours="24">1 วัน</button>
+            <button type="button" class="quick-range-btn" data-hours="168">1 สัปดาห์</button>
+            <button type="button" class="quick-range-btn" data-hours="720">1 เดือน</button>
+            <button type="button" class="quick-range-btn clear" data-clear="1">✕ ล้าง</button>
+          </div>
+          <p class="form-hint">กดแล้วเริ่มออกอากาศทันที (เวลาตอนนี้) + สิ้นสุดอัตโนมัติตามช่วงที่เลือก — ต้องการเวลาที่เจาะจง ตั้งเองในช่องด้านบนได้</p>
+        </div>
+        <p class="form-hint" style="margin-top:-6px">โฆษณาหมดเวลาแล้วจะหายจากสไลด์บนสุด แถวดีลเด็ด และหน้าโปรโมชันอัตโนมัติ (คูปองหมดอายุพร้อมกันด้วย)</p>
+
+        <div class="modal-actions">
+          <button type="button" id="af-cancel" class="btn-ghost">ยกเลิก</button>
+          <button type="submit" id="af-save" class="btn-primary">บันทึกโฆษณา</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== ตัวอย่างหน้าร้าน (พรีวิวจากค่าที่กรอกใน panel แก้ข้อมูล) ===== -->
+  <div id="preview-overlay" class="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="preview-title">
+      <div class="modal-head">
+        <h2 id="preview-title">👁️ ตัวอย่างหน้าร้าน</h2>
+        <button id="preview-close" class="modal-close" aria-label="ปิด">✕</button>
+      </div>
+      <div id="preview-body" class="preview-body"></div>
+    </div>
+  </div>
+
+  <!-- ===== แจ้งเตือน ===== -->
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <span id="toast-msg"></span>
+    <button id="toast-undo" class="toast-undo" type="button" hidden>↩️ เลิกทำ</button>
+  </div>
+
+  <script src="firebase-config.js"></script>
+  <script src="firebase-lib.js"></script>
+  <script src="menu-data.js"></script>
+  <script src="components/ui.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

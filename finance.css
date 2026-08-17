@@ -1,0 +1,153 @@
+/* ===== หน้า การเงินแพลตฟอร์ม — เพิ่มจาก dashboard.css ===== */
+.finance-header h1 { color: var(--gold, #b8860b); }
+
+/* ===== แถบสลับช่วงเวลา ===== */
+.finance-bar {
+  max-width: 860px;
+  margin: 14px auto 0;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.finance-bar label { font-size: 13px; font-weight: 700; }
+.finance-toggle {
+  display: inline-flex;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 3px;
+}
+.finance-toggle-btn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 7px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.finance-toggle-btn.active {
+  background: var(--gold, #b8860b);
+  color: #fff;
+}
+
+/* ===== สถิติ (5 ใบ — ปรับกริดอัตโนมัติ) ===== */
+.finance-stats { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.finance-stat-rider b { color: var(--purple, #7c3aed); }
+.finance-stat-platform b { color: var(--gold, #b8860b); }
+.stat-card:nth-child(5) b { color: var(--gold, #b8860b); }
+
+/* ===== แถบตั้งค่าธรรมเนียม ===== */
+.finance-fee {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.finance-fee label {
+  font-size: 12.5px;
+  color: var(--gold, #b8860b);
+  cursor: help;
+}
+.finance-fee input {
+  width: 72px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--card);
+  text-align: right;
+}
+.finance-fee input:focus {
+  outline: none;
+  border-color: var(--gold, #b8860b);
+  box-shadow: 0 0 0 3px rgba(184, 134, 11, .15);
+}
+.finance-fee-unit { font-size: 13px; font-weight: 800; color: var(--muted); }
+.finance-fee button {
+  border: none;
+  background: var(--gold, #b8860b);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.finance-fee button:hover { background: #96700a; }
+
+/* คอลัมน์ ค่าธรรมเนียม + สุทธิ */
+.finance-table td.fee { color: var(--gold, #b8860b); font-weight: 700; }
+.finance-table td.net { font-weight: 800; }
+
+/* ===== ส่วนตาราง ===== */
+.finance-section {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  margin-bottom: 20px;
+}
+.finance-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.finance-section-head h2 { font-size: 17px; font-weight: 800; }
+.finance-section-sub { font-size: 12px; color: var(--muted); font-weight: 700; }
+
+.finance-table-wrap { overflow-x: auto; }
+.finance-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.finance-table th {
+  text-align: left;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 700;
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--line);
+  white-space: nowrap;
+}
+.finance-table th.num,
+.finance-table td.num { text-align: right; }
+.finance-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.finance-table tbody tr:hover { background: var(--accent-soft); }
+.finance-table td b { font-size: 14px; }
+.finance-table td.total { font-weight: 800; color: var(--accent-dark); }
+.finance-table tr.total-row td { font-weight: 800; border-top: 2px solid var(--line); border-bottom: none; }
+.finance-table tr.total-row td.total { color: var(--accent-dark); font-size: 14.5px; }
+.finance-rider-name { color: var(--purple, #7c3aed); font-weight: 800; }
+
+/* ===== ประวัติเบิกถอน ===== */
+.finance-withdraw-list { display: flex; flex-direction: column; gap: 8px; }
+.finance-withdraw-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+}
+.finance-withdraw-item b { color: var(--green); }
+.finance-withdraw-item small { color: var(--muted); }

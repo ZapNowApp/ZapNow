@@ -740,7 +740,9 @@ function toggleFollow(id) {
 
 function addRegisteredStore(store) {
   const stores = getRegisteredStores();
-  const id = nextId([...RESTAURANTS, ...stores]);
+  // ⚠️ id ร้านใหม่: ใช้ timestamp (ไม่ใช้ nextId เฉพาะเครื่อง) — กัน id ชนกับร้านที่สมัครจากเครื่องอื่น
+  //    (เคย: nextId = สูงสุดในเครื่อง+1 → สมัครจากคนละเครื่องได้ id ซ้ำ → สองร้านใช้ id เดียวกัน → เมนูปนกัน)
+  const id = Math.max(nextId([...RESTAURANTS, ...stores]), Date.now());
   const newStore = { ...store, id, rating: 5.0, reviews: 0, createdAt: Date.now(), defaultMenu: [] };
   stores.push(newStore);
   try {
@@ -755,10 +757,17 @@ function addRegisteredStore(store) {
 function getRestaurants() {
   // ข้อมูลที่แอดมินแก้ไข (ชื่อ/ประเภท/เวลาเปิดปิด) ทับข้อมูลตั้งต้น — ส่งผลทุกหน้า (หน้าร้าน/หลังร้าน)
   const edits = getStoreEdits();
-  return [...RESTAURANTS, ...getRegisteredStores()].map((r) => {
-    const e = edits[String(r.id)];
-    return { ...r, ...(e || {}), menu: getMenu(r.id) };
+  // กัน id ซ้ำ (ร้านสมัครเก่าที่ id ชนกันจากบั๊กเดิม) — ตัวแรกชนะ ไม่แสดงการ์ดซ้ำ/เมนูปนกัน
+  const seen = new Set();
+  const out = [];
+  [...RESTAURANTS, ...getRegisteredStores()].forEach((r) => {
+    const key = String(r.id);
+    if (seen.has(key)) return;
+    seen.add(key);
+    const e = edits[key];
+    out.push({ ...r, ...(e || {}), menu: getMenu(r.id) });
   });
+  return out;
 }
 
 function getRestaurant(id) {
@@ -1907,7 +1916,90 @@ function mergeRemoteRestaurants(remote) {
       changed = true;
     });
     if (changed) localStorage.setItem(REGISTERED_KEY, JSON.stringify(local));
+    // 🔥 ตรวจ id ร้านซ้ำ (ร้านสมัครเก่าจากบั๊ก id ชนกัน) → บันทึกคอนฟลิกต์ + แจ้งหน้า admin
+    const conflicts = detectStoreIdConflicts();
+    if (conflicts.length) {
+      try { localStorage.setItem(STORE_CONFLICTS_KEY, JSON.stringify(conflicts)); } catch (_) { /* ไม่เป็นไร */ }
+      document.dispatchEvent(new CustomEvent("sangkha:store-id-conflicts", { detail: conflicts }));
+    }
   } catch (_) { /* ไม่เป็นไร */ }
+}
+
+const STORE_CONFLICTS_KEY = "sangkha-store-id-conflicts";
+
+// ตรวจร้านที่ id ซ้ำกัน (ร้านต่างชื่อ แต่ใช้ id เดียวกัน → ระบบมองเป็นร้านเดียวกัน → เมนูปนกัน)
+//   ตรวจจากรายการดิบ (ร้านพื้นฐาน + ร้านสมัคร) ก่อน dedupe — ถ้าอ่าน getRestaurants() จะเห็นแค่ตัวแรก
+//   คืนรายการ { id, names: [ชื่อร้านที่ชนกัน] }
+function detectStoreIdConflicts() {
+  const groups = {};
+  [...RESTAURANTS, ...getRegisteredStores()].forEach((r) => {
+    if (r == null) return;
+    const k = String(r.id);
+    (groups[k] = groups[k] || []).push(r.name || "ร้านไม่มีชื่อ");
+  });
+  return Object.keys(groups)
+    .filter((k) => groups[k].length > 1)
+    .map((k) => ({ id: k, names: groups[k] }));
+}
+
+// แก้ id ร้านซ้ำ: เก็บร้านที่สร้างล่าสุด (createdAt สูงสุด) ไว้ id เดิม — ร้านเก่ากว่าได้ id ใหม่ (timestamp)
+//   ย้ายเมนูตาม id ใหม่ + สะท้อน Firestore → ล้างคอนฟลิกต์ → คืนจำนวนร้านที่แก้
+function fixStoreIdConflicts() {
+  const conflicts = detectStoreIdConflicts();
+  if (!conflicts.length) return 0;
+  const stores = getRegisteredStores();
+  const baseIds = new Set(RESTAURANTS.map((r) => String(r.id)));
+  let fixed = 0;
+  conflicts.forEach((c) => {
+    // กลุ่มร้านที่ใช้ id นี้ (เฉพาะร้านสมัคร — ร้านพื้นฐานไม่เปลี่ยน id เด็ดขาด)
+    const group = stores.filter((s) => String(s.id) === c.id);
+    if (!group.length) return;
+    // ร้านสมัครที่ id ชนกับร้านพื้นฐาน → ต้องย้ายทุกตัว (ร้านพื้นฐานอยู่ต่อ)
+    if (baseIds.has(c.id)) {
+      group.forEach((s) => { fixAssignNewId(s, stores); fixed++; });
+      return;
+    }
+    // ร้านสมัครด้วยกัน 2+ ตัว → เก็บตัวที่สร้างล่าสุดไว้ id เดิม ตัวเก่ากว่าได้ id ใหม่
+    if (group.length < 2) return;
+    group.sort((a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0));
+    group.slice(1).forEach((s) => { fixAssignNewId(s, stores); fixed++; });
+  });
+  if (fixed) {
+    try { localStorage.setItem(REGISTERED_KEY, JSON.stringify(stores)); } catch (_) { /* ไม่เป็นไร */ }
+    try { localStorage.removeItem(STORE_CONFLICTS_KEY); } catch (_) { /* ไม่เป็นไร */ }
+    fbSyncRestaurants();
+    fbSyncMenus(String(conflicts[0].id));
+    // รีเฟรช UI ทุกหน้า + แจ้ง admin
+    document.dispatchEvent(new CustomEvent("sangkha:firebase-restaurants"));
+    document.dispatchEvent(new CustomEvent("sangkha:store-id-conflicts", { detail: [] }));
+  }
+  return fixed;
+}
+
+// ให้ id ใหม่ (timestamp) แก่ร้านสมัครตัวหนึ่ง + ย้ายเมนู/ค่าตั้งตาม id ใหม่
+function fixAssignNewId(s, stores) {
+  const newId = Math.max(nextId([...RESTAURANTS, ...stores]), Date.now());
+  const oldId = String(s.id);
+  s.id = newId;
+  s.createdAt = Date.now();
+  // ย้ายเมนูของร้านนี้ไปที่ id ใหม่ (กันเมนูปนกับร้านที่อยู่ต่อ)
+  const menu = getLocalMenu(oldId);
+  if (menu.length) {
+    try {
+      localStorage.setItem(MENU_KEY + "-" + newId, JSON.stringify(menu));
+      localStorage.removeItem(MENU_KEY + "-" + oldId);
+    } catch (_) { /* ไม่เป็นไร */ }
+  }
+  // ป้าย/ค่าตั้งอื่น ๆ ที่ผูกกับ id เก่า → คัดลอกไป id ใหม่
+  ["sangkha-store-pins", "sangkha-auto-close", "sangkha-store-closed", "sangkha-restaurant-fees", "sangkha-restaurant-delivery", "sangkha-restaurant-riders", "sangkha-restaurant-ad-categories"].forEach((key) => {
+    try {
+      const all = JSON.parse(localStorage.getItem(key) || "{}");
+      if (all[oldId] !== undefined) {
+        all[newId] = all[oldId];
+        localStorage.setItem(key, JSON.stringify(all));
+      }
+    } catch (_) { /* ไม่เป็นไร */ }
+  });  return s;
 }
 
 // ไรเดอร์จาก Firestore (ลงทะเบียนจากเครื่องอื่น) → รวมเข้ากับทะเบียนในเครื่องนี้

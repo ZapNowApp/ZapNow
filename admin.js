@@ -1943,6 +1943,26 @@ renderWht();
 renderPending();
 renderPin();
 renderStoreEdit();
+renderStoreConflicts();
+
+// ⚠️ id ร้านซ้ำ (ร้านต่างชื่อใช้ id เดียวกัน → เมนูปนกัน) — แบนเนอร์บนแดชบอร์ด + ปุ่มแก้ไขอัตโนมัติ
+function renderStoreConflicts() {
+  const banner = $("#store-conflict-banner");
+  if (!banner) return;
+  const conflicts = detectStoreIdConflicts();
+  if (!conflicts.length) { banner.hidden = true; return; }
+  banner.hidden = false;
+  $("#store-conflict-detail").textContent =
+    conflicts.map((c) => "id " + c.id + " → " + c.names.join(" / ")).join("  ·  ") +
+    " — ร้าน 2 ขึ้นไปใช้ id เดียวกัน เมนูอาจปนกัน กดแก้ไขเพื่อแยกอัตโนมัติ";
+}
+$("#btn-fix-store-conflicts")?.addEventListener("click", () => {
+  const n = fixStoreIdConflicts();
+  if (n) showToast("✅ แยก id ร้านซ้ำแล้ว " + n + " ร้าน — เมนูไม่ปนกันอีก");
+  else showToast("ไม่มีร้านที่ id ซ้ำในเครื่องนี้");
+  renderStoreConflicts();
+  renderAdminSummary();
+});
 
 // 🔥 Firebase: เชื่อม Firestore (ถ้าตั้งค่า config แล้ว) — ร้าน/ไรเดอร์ที่สมัครจากเครื่องอื่นจะโผล่ในหน้า admin
 initFirebaseCollections();
@@ -1950,7 +1970,9 @@ document.addEventListener("sangkha:firebase-restaurants", () => {
   buildRestaurantSelect();
   fillWhtRestaurantSelect();
   renderStoreEdit();
+  renderStoreConflicts();
 });
+document.addEventListener("sangkha:store-id-conflicts", () => renderStoreConflicts());
 document.addEventListener("sangkha:firebase-riders", () => renderRestaurantRiders());
 // 🔥 เมนูจาก Firestore อัปเดต (เพิ่ม/แก้จากเครื่องอื่น หรือตอนโหลดครั้งแรก) → รีเฟรชรายการสินค้าของร้านที่เปิดอยู่
 //   (หลังร้านอ่านเมนู Firestore เป็นหลักเหมือนหน้าร้าน — localStorage เป็นแค่ตัวสำรอง)

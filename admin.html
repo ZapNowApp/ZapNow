@@ -85,6 +85,14 @@
       <div class="admin-summary-card"><b id="sum-customers">0</b><span>ลูกค้า</span></div>
       <div class="admin-summary-card admin-summary-sales"><b id="sum-sales-today">฿0</b><span>ยอดขายวันนี้</span></div>
     </div>
+    <!-- ⚠️ เตือน id ร้านซ้ำ (ร้านต่างชื่อใช้ id เดียวกัน → เมนูปนกัน) -->
+    <div id="store-conflict-banner" class="store-conflict-banner" hidden>
+      <div class="store-conflict-text">
+        <b>⚠️ พบร้านที่ id ซ้ำกัน</b>
+        <span id="store-conflict-detail"></span>
+      </div>
+      <button id="btn-fix-store-conflicts" class="btn-conflict-fix" type="button">🔧 แก้ไขอัตโนมัติ</button>
+    </div>
     <div class="admin-cats" id="admin-cats"><!-- การ์ดหมวด render โดย admin.js --></div>
   </div>
 

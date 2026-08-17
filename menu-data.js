@@ -1118,6 +1118,7 @@ function addPendingMenuItem(restaurantId, action, item) {
   try {
     localStorage.setItem(PENDING_MENU_KEY, JSON.stringify(pending));
   } catch (_) { /* ไม่เป็นไร */ }
+  fbSyncPendingMenus(); // 🔥 สะท้อนคิวรออนุมัติลง Firestore (แอดมิน/ร้านเครื่องอื่นเห็น)
   return record;
 }
 
@@ -1126,6 +1127,19 @@ function deletePendingMenuItem(id) {
   try {
     localStorage.setItem(PENDING_MENU_KEY, JSON.stringify(pending.filter((p) => p.id !== id)));
   } catch (_) { /* ไม่เป็นไร */ }
+  fbSyncPendingMenus(); // 🔥 สะท้อนคิวรออนุมัติลง Firestore
+}
+
+// 🔥 สะท้อนคิวรออนุมัติทั้งหมดลง Firestore (collection "menuPending" → doc "queue")
+//    คิวรออนุมัติเดิมเก็บแค่ localStorage (เครื่องเดียว) — ร้านส่งขอจากมือถือ → แอดมินที่คอมไม่เห็น
+//    เขียนทั้งชุดลง doc เดียว (ทับทุกครั้ง) — ง่ายและไม่ต้องไล่ลบ doc เก่า
+function fbSyncPendingMenus() {
+  fbMirror(() => {
+    window.FirebaseOrders.saveDoc("menuPending", "queue", {
+      list: getPendingMenu(),
+      updatedAt: Date.now(),
+    });
+  });
 }
 
 // อนุมัติ → นำไปใช้กับเมนูจริงของร้าน (คืน true ถ้าสำเร็จ)
@@ -2075,7 +2089,25 @@ function initFirebaseCollections() {
       mergeRemoteMenus(remote);
       document.dispatchEvent(new CustomEvent("sangkha:firebase-menus"));
     });
+    // 🔥 คิวรออนุมัติเมนู: ร้านส่งขอจากเครื่องอื่น → แอดมิน/หน้าร้านที่เครื่องนี้เห็นทันที
+    //    (เขียนทับเฉพาะเมื่อรายการต่าง — กันวนลูประหว่างเขียน local ↔ ฟังกลับ)
+    window.FirebaseOrders.subscribeCollection("menuPending", mergeRemotePendingMenus);
+    // ดึงครั้งเดียวตอนเปิดหน้า (กันกรณี listener พลาด/เน็ตสะดุด) — แอดมินเปิดหน้า = เห็นคิวล่าสุดเสมอ
+    window.FirebaseOrders.getAll("menuPending").then(mergeRemotePendingMenus).catch(() => { /* ไม่เป็นไร */ });
   });
+}
+
+// รวมคิวรออนุมัติจาก Firestore เข้า localStorage (เฉพาะเมื่อต่าง — ไม่วนลูป)
+function mergeRemotePendingMenus(remote) {
+  try {
+    const doc = (remote || []).find((d) => d.id === "queue");
+    if (!doc || !Array.isArray(doc.list)) return;
+    const cur = getPendingMenu();
+    if (JSON.stringify(cur) !== JSON.stringify(doc.list)) {
+      localStorage.setItem(PENDING_MENU_KEY, JSON.stringify(doc.list));
+      document.dispatchEvent(new CustomEvent("sangkha:firebase-pending"));
+    }
+  } catch (_) { /* ไม่เป็นไร */ }
 }
 
 // บันทึกออเดอร์ใหม่ (สถานะเริ่มต้น "ใหม่") — คืนออเดอร์ที่บันทึกแล้ว

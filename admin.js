@@ -990,6 +990,13 @@ function renderPending() {
   const pending = getPendingMenu();
   const panel = $("#pending-panel");
   panel.hidden = role !== "admin";
+  // badge จำนวนรออนุมัติบนการ์ด "เมนู" ในแดชบอร์ด (แอดมินเห็นทันทีไม่ต้องเข้าหมวด)
+  const badge = $("#cat-pending-badge");
+  if (badge) {
+    const show = role === "admin" && pending.length > 0;
+    badge.hidden = !show;
+    if (show) badge.textContent = pending.length;
+  }
   if (role !== "admin") return;
   $("#pending-count").textContent = `${pending.length} รายการ`;
   $("#pending-empty").hidden = pending.length > 0;
@@ -1876,6 +1883,15 @@ reviewListEl.addEventListener("click", (e) => {
   }
 });
 
+// คิวรออนุมัติเปลี่ยนจาก Firestore (ร้าน/แอดมินเครื่องอื่น) → อัปเดตจอทันที
+if (!document.__sangkhaFbPending) {
+  document.__sangkhaFbPending = true;
+  document.addEventListener("sangkha:firebase-pending", () => {
+    renderPending();
+    renderList();
+  });
+}
+
 // รีวิว/คำตอบอัปเดตสด (ลูกค้าส่งรีวิวในแท็บอื่น) + ทะเบียนไรเดอร์เปลี่ยน (ลงทะเบียนที่ Rider Dashboard) + อัตราค่าธรรมเนียม
 window.addEventListener("storage", (e) => {
   if (e.key === REVIEWS_KEY) renderReviews();
@@ -1958,11 +1974,12 @@ function renderAdminCats() {
     .map((c) =>
       '<button type="button" class="admin-cat-card" data-cat="' + c.key + '">' +
       '<span class="cat-ico ' + c.color + '">' + c.icon + "</span>" +
-      '<span class="cat-txt"><b>' + c.title + "</b><span>" + c.desc + "</span></span>" +
+      '<span class="cat-txt"><b>' + c.title + (c.key === "menu" ? '<em class="cat-badge" id="cat-pending-badge" hidden></em>' : "") + "</b><span>" + c.desc + "</span></span>" +
       '<span class="cat-go" aria-hidden="true">›</span>' +
       "</button>"
     )
     .join("");
+  renderPending(); // อัปเดต badge จำนวนรออนุมัติบนการ์ดเมนู
 }
 
 // จำนวนลูกค้า = บัญชีที่สมัคร + เบอร์ลูกค้าที่เคยสั่ง (ไม่นับซ้ำ)

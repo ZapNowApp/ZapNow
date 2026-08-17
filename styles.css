@@ -26,50 +26,75 @@ body {
   transition: padding var(--transition-fast);
 }
 
-/* โหมดหดเมื่อเลื่อนลงไกล: สไลด์ใหญ่ย่อเป็นแถบบาง เหลือช่องค้นหาเต็ม */
+/* โหมดหดเมื่อเลื่อนลงไกล: สไลด์ใหญ่ย่อเป็นแถบสไลด์บาง (ยังเห็นโฆษณาอยู่ — ไม่หาย) เหลือช่องค้นหาเต็ม */
 .sticky-head .top-ad {
-  transition: height var(--transition), min-height var(--transition), margin var(--transition), opacity var(--transition);
+  transition: height var(--transition), min-height var(--transition), margin var(--transition);
 }
-.sticky-head.scrolled { padding: 8px 0 8px; }
+.sticky-head.scrolled { padding: 6px 0 8px; }
 .sticky-head.scrolled .top-ad {
-  height: 0;
-  min-height: 0;
-  margin: 0;
-  opacity: 0;
-  pointer-events: none;
+  min-height: 54px;
+  margin: 0 20px 8px;
+  border-radius: 14px;
+  transform: scale(.985);
+  box-shadow: 0 6px 18px rgba(255, 81, 47, .28);
+  transition: min-height var(--transition), margin var(--transition), border-radius var(--transition), transform var(--transition), box-shadow var(--transition);
 }
 .sticky-head.scrolled .search-bar { box-shadow: 0 4px 14px rgba(36, 31, 26, .14); }
 
-/* แถบโฆษณาย่อ (โชว์เฉพาะโหมด scrolled) */
-.ad-mini {
-  display: none;
-  align-items: center;
-  gap: 10px;
-  width: calc(100% - 40px);
-  margin: 0 auto 0;
-  padding: 9px 14px;
-  border: 0;
+/* แถบสไลด์บาง: ย่อเนื้อหาเข้าไปดูมีชีวิตชีวา (สไลด์ยังหมุน/คลิกได้) */
+.sticky-head.scrolled .top-ad-slide .top-ad-emoji {
+  font-size: 34px;
+  top: auto;
+  bottom: 20px;
+  right: 6px;
+  transform: scale(.5) rotate(-6deg);
+  transform-origin: bottom right;
+}
+.sticky-head.scrolled .top-ad-slide .top-ad-emoji-img {
+  width: 44px;
+  height: 44px;
   border-radius: 14px;
-  background: linear-gradient(135deg, var(--accent), #ff8a3d);
+}
+.sticky-head.scrolled .top-ad-slide .top-ad-content {
+  top: 50%;
+  max-width: 72%;
+  padding: 8px 16px;
+  transform: translateY(-50%) scale(.82);
+  transform-origin: left center;
+}
+.sticky-head.scrolled .top-ad-eyebrow,
+.sticky-head.scrolled .top-ad-cta,
+.sticky-head.scrolled .top-ad-timer .timer-bar,
+.sticky-head.scrolled .top-ad-video-controls {
+  display: none;
+}
+.sticky-head.scrolled .top-ad-title { font-size: 17px; margin-bottom: 0; }
+.sticky-head.scrolled .top-ad-timer { font-size: 11px; margin-top: 2px; }
+.sticky-head.scrolled .top-ad-timer .ad-countdown { font-size: 12px; }
+.sticky-head.scrolled .slide-progress { bottom: 2px; height: 3px; }
+
+/* ปุ่ม "ดู →" ในโหมดแถบ (กระพริบเชิญชวนกด) */
+.sticky-head.scrolled .top-ad::after {
+  content: "ดู →";
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  z-index: 4;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
   color: #fff;
-  font-family: inherit;
-  font-size: 13.5px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: var(--shadow-primary);
-  animation: ds-fade-down var(--transition) both;
+  background: rgba(0, 0, 0, .38);
+  backdrop-filter: blur(2px);
+  animation: adMiniPulse 1.6s ease-in-out infinite;
+  pointer-events: none;
+  user-select: none;
 }
-.sticky-head.scrolled .ad-mini { display: flex; }
-.ad-mini-icon { font-size: 17px; flex-shrink: 0; }
-.ad-mini-text {
-  flex: 1;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: left;
+@keyframes adMiniPulse {
+  0%, 100% { opacity: .75; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.08); }
 }
-.ad-mini-go { font-size: 12px; font-weight: 800; opacity: .9; flex-shrink: 0; }
 
 /* ===== โฆษณาบนสุด (สไลด์หมุนหลายชิ้น) ===== */
 .top-ad {
@@ -450,7 +475,8 @@ body {
   .top-ad-emoji, .top-ad-cta, .top-ad-slide,
   .ad-kenburns, .ad-shine,
   .top-ad-slide.ad-motion .top-ad-title, .top-ad-slide.ad-motion .top-ad-cta,
-  .ad-title-anim-blink, .ad-title-anim-pulse, .ad-title-anim-bounce, .ad-title-anim-swing, .ad-title-anim-zoom { animation: none !important; }
+  .ad-title-anim-blink, .ad-title-anim-pulse, .ad-title-anim-bounce, .ad-title-anim-swing, .ad-title-anim-zoom,
+  .sticky-head.scrolled .top-ad::after { animation: none !important; }
 }
 
 /* ===== ดีลเด็ด (แถวการ์ดในส่วนเมนู) ===== */
@@ -1758,9 +1784,11 @@ body {
   .sticky-head { padding: 10px 0 8px; }
   .sticky-head.scrolled { padding: 6px 0 6px; }
   .search-bar { margin: 0 12px; }
-  .ad-mini { width: calc(100% - 24px); }
   .store-switcher { margin: 12px 12px 0; }
   .top-ad { margin: 0 12px 10px; min-height: 140px; border-radius: 16px; }
+  .sticky-head.scrolled .top-ad { min-height: 50px; margin: 0 12px 8px; border-radius: 12px; }
+  .sticky-head.scrolled .top-ad-title { font-size: 15px; }
+  .sticky-head.scrolled .top-ad-timer { font-size: 10px; }
   .top-ad-content { padding: 14px 16px 32px; max-width: 72%; }
   .top-ad-title { font-size: 20px; }
   .top-ad-emoji { font-size: 46px; top: 8%; }

@@ -193,28 +193,12 @@ function goToAdSlide(i) {
       progress.style.animation = `slideProgress ${slideInterval}ms linear forwards`;
     }
   });
-  updateAdMini(); // แถบโฆษณาย่อ (หัวหด) ตามสไลด์ที่แสดงอยู่
 }
 
-/* ===== แถบโฆษณาย่อ + หัวหดอัตโนมัติเมื่อเลื่อนลงไกล =====
-   - เลื่อนลง > 140px → สไลด์ใหญ่ย่อเป็นแถบบาง (เห็นหัวข้อโฆษณา) เหลือช่องค้นหาเต็ม
-   - เลื่อนขึ้นใกล้บนสุด → ขยายกลับเป็นสไลด์ใหญ่
-   - แถบบางแตะ = เปิดหน้าโปรโมชัน (บันทึกสถิติคลิกเหมือนกดสไลด์) */
+/* ===== หัวหดอัตโนมัติเมื่อเลื่อนลงไกล =====
+   - เลื่อนลง > 140px → สไลด์ใหญ่ย่อเป็นแถบสไลด์บาง (ยังเห็นโฆษณาหมุนอยู่) เหลือช่องค้นหาเต็ม
+   - เลื่อนขึ้นใกล้บนสุด → ขยายกลับเป็นสไลด์ใหญ่ */
 const stickyHeads = [...document.querySelectorAll(".sticky-head")];
-const adMiniEls = [...document.querySelectorAll(".ad-mini")];
-
-function updateAdMini() {
-  adMiniEls.forEach((el) => {
-    const isHome = !!el.closest(".sticky-head-home");
-    const list = isHome ? HOME_ADS : ADS;
-    if (!list.length) return;
-    const ad = list[((adIndex % list.length) + list.length) % list.length];
-    const icon = el.querySelector(".ad-mini-icon");
-    const text = el.querySelector(".ad-mini-text");
-    if (icon) icon.textContent = ad.emoji || "⚡";
-    if (text) text.textContent = `${ad.title || "โปรเด็ด"} — ${ad.cta || "ดูโปรโมชัน"}`;
-  });
-}
 
 function onScrollCollapse() {
   stickyHeads.forEach((sh) => sh.classList.toggle("scrolled", window.scrollY > 140));
@@ -236,15 +220,6 @@ if (stickyHeads.length) {
   );
   onScrollCollapse();
 }
-
-adMiniEls.forEach((el) => {
-  el.addEventListener("click", () => {
-    const ad = ADS[adIndex];
-    if (!ad) return;
-    recordAdClick(ad.id);
-    location.href = `deal.html?id=${ad.id}`;
-  });
-});
 
 function startAdAuto() {
   stopAdAuto();

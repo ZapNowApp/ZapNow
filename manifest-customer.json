@@ -1,0 +1,16 @@
+{
+  "name": "ZapNow — สั่งอาหารเดลิเวอรี",
+  "short_name": "ZapNow",
+  "description": "สั่งอาหารเดลิเวอรี — ร้านค้า ไรเดอร์ ลูกค้า ในที่เดียว",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFF7EF",
+  "theme_color": "#FF7A1A",
+  "icons": [
+    { "src": "icon-customer-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-customer-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-customer-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

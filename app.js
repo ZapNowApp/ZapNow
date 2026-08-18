@@ -199,9 +199,17 @@ function goToAdSlide(i) {
    - เลื่อนลง > 140px → สไลด์ใหญ่ย่อเป็นแถบสไลด์บาง (ยังเห็นโฆษณาหมุนอยู่) เหลือช่องค้นหาเต็ม
    - เลื่อนขึ้นใกล้บนสุด → ขยายกลับเป็นสไลด์ใหญ่ */
 const stickyHeads = [...document.querySelectorAll(".sticky-head")];
+// hysteresis: ย่อเมื่อเลื่อนลงเกิน 140px แต่ขยายกลับเมื่อเลื่อนขึ้นน้อยกว่า 90px
+// (กัน class สลับไป-มาที่ขอบ 140px ระหว่างเลื่อน — ต้นเหตุภาพสั่น)
+let adCollapsed = false;
 
 function onScrollCollapse() {
-  stickyHeads.forEach((sh) => sh.classList.toggle("scrolled", window.scrollY > 140));
+  const y = window.scrollY;
+  // ย่ออยู่แล้ว → ยังย่อต่อไปเรื่อย ๆ จนกว่า y < 90 (ขยายกลับ)
+  const next = adCollapsed ? y >= 90 : y > 140;
+  if (next === adCollapsed) return;
+  adCollapsed = next;
+  stickyHeads.forEach((sh) => sh.classList.toggle("scrolled", adCollapsed));
 }
 
 if (stickyHeads.length) {

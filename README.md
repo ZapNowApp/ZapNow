@@ -74,6 +74,26 @@ http://127.0.0.1:4173
 
 ---
 
+## 2.2) 📱 ติดตั้งเป็นแอปบนมือถือ (PWA — แยก 4 แอป)
+
+ทุกหน้าติดตั้งลงหน้าจอมือถือได้แบบแอปจริง (เปิดเต็มจอ มีไอคอนของตัวเอง) — แยกเป็น **4 แอป** ตามบทบาท:
+
+| แอป | หน้าเปิดแรก | สี/ไอคอน | วิธีติดตั้ง |
+|---|---|---|---|
+| **🍜 ZapNow** (ลูกค้า) | `index.html` | ส้ม `#FF7A1A` · กระเป๋า+รถ | เปิดเว็บสด → Chrome/Edge → เมนู ⋮ → **ติดตั้งแอป** (หรือ iOS Safari → แชร์ → **เพิ่มไปที่หน้าจอหลัก**) |
+| **🏪 Sangkha Partner** (ร้านค้า) | `login.html` | ชมพู/แดง `#E11D48` · หน้าร้าน | เหมือนกัน — เข้าหน้า `login.html` |
+| **🛵 Sangkha Rider** (ไรเดอร์) | `rider.html` | ม่วง `#7C3AED` · สกู๊ตเตอร์+หมวก | เหมือนกัน — เข้าหน้า `rider.html` |
+| **🛡️ ZapNow Admin** (แอดมิน) | `admin.html` | ฟ้า `#2563EB` · โล่+ถูก | เหมือนกัน — เข้าหน้า `admin.html` |
+
+แต่ละแอปมี **manifest ของตัวเอง** (`manifest-customer.json` / `manifest-partner.json` / `manifest-rider.json` / `manifest-admin.json`) + **ไอคอน 4 ขนาดของตัวเอง** (`icon-<แอป>-512/192/180/48.png`) + theme-color + apple-touch-icon (iOS) — แต่ละหน้ากลุ่ม (เช่น `dashboard.html` ใช้ manifest ร้านค้า, `finance.html` ใช้ manifest แอดมิน) |
+
+**ข้อควรรู้:**
+- ต้องเปิดผ่าน **HTTPS** (เว็บสด GitHub Pages มีให้แล้ว — `https://zapnowapp.github.io/ZapNow/...`) — เปิดที่ `127.0.0.1` ใช้ทดสอบได้ (ถือเป็น secure context)
+- **Android** = ติดตั้งเต็มรูปแบบ (มีไอคอน + เปิดเต็มจอ) · **iOS** = ใช้ไอคอน + เปิดเต็มจอผ่าน apple-touch-icon/apple-mobile-web-app-capable (ไม่มีป้ายติดตั้งอัตโนมัติ ต้องกด "เพิ่มไปที่หน้าจอหลัก" เอง)
+- ไอคอนเจนใหม่ได้เมื่ออยากแก้ดีไซน์: `node scripts/generate-app-icons.js`
+
+---
+
 ## 3) วิธีดูทีละหน้า
 
 ### หน้า 1 — หน้าร้านอาหาร (ลูกค้า)
@@ -306,9 +326,11 @@ http://127.0.0.1:4173
 | `finance.css` | สไตล์การเงินแพลตฟอร์ม |
 | `deals.css` | สไตล์หน้า ดีลเด็ด |
 | `firebase-config.js` | 🔥 วาง config Firebase ของคุณที่นี่ (ถ้ายังไม่ตั้ง = แอปใช้ localStorage เหมือนเดิม) |
-| `icon-512.png` / `icon-192.png` / `icon-180.png` / `icon-48.png` | ไอคอนแอปหลายขนาด (Add to Home Screen / PWA) — โลโก้กระเป๋าเดลิเวอรี + รถไรเดอร์ |
-| `manifest.json` | PWA manifest (ชื่อแอป + ไอคอน + theme color ส้ม) — ทุกหน้า link ไว้แล้ว |
-| `scripts/generate-icons.js` | สคริปต์วาดไอคอน/โลโก้เอง (Node ไร้ dependency — PNG encoder ในตัว) — รัน `node scripts/generate-icons.js` เมื่ออยากแก้ดีไซน์แล้วเจนใหม่ |
+| `icon-512.png` / `icon-192.png` / `icon-180.png` / `icon-48.png` | ไอคอนแบรนด์หลัก (กระเป๋าเดลิเวอรี + รถไรเดอร์) |
+| `icon-<customer/partner/rider/admin>-512/192/180/48.png` | **ไอคอนแยก 4 แอป** (ลูกค้าส้ม / ร้านค้าชมพู / ไรเดอร์ม่วง / แอดมินฟ้า) — ใช้กับ manifest ของแต่ละแอป |
+| `manifest-customer.json` / `manifest-partner.json` / `manifest-rider.json` / `manifest-admin.json` | PWA manifest แยก 4 แอป (ชื่อ + ไอคอน + theme color ต่างกัน) — แต่ละหน้ากลุ่ม link manifest ของแอปตัวเอง |
+| `scripts/generate-icons.js` | สคริปต์วาดไอคอนแบรนด์หลัก (Node ไร้ dependency) — รัน `node scripts/generate-icons.js` |
+| `scripts/generate-app-icons.js` | สคริปต์วาดไอคอน **4 แอป** (ลูกค้า/ร้านค้า/ไรเดอร์/แอดมิน) — รัน `node scripts/generate-app-icons.js` เมื่ออยากแก้ดีไซน์แล้วเจนใหม่ |
 | `firebase-lib.js` | ชั้นเชื่อมกลาง Firebase ทุกหน้า: โหลด SDK (App+Auth+Firestore) + auto-init ครั้งเดียว + onSnapshot / save / update / delete ออเดอร์ + Auth helper |
 | `server.js` | เซิร์ฟเวอร์สำหรับเปิดดูหน้าเว็บ (`node server.js`) |
 | `README.md` | คู่มือนี้ |

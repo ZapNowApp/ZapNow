@@ -5,7 +5,11 @@
 
 const $ = (sel) => document.querySelector(sel);
 
+// ถ้ายังไม่ล็อกอิน → กลับหน้าล็อกอิน
 let profile = getRiderProfile();
+if (!profile) {
+  location.replace("rider-login.html");
+}
 let filter = "ready";
 let doneMonth = "all"; // เดือนที่กรองในแท็บ ส่งแล้ว ("all" = ทุกเดือน)
 let lastReadyIds = new Set(); // งานพร้อมส่งที่เห็นแล้ว (กันแจ้งเตือนซ้ำ)

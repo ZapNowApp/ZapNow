@@ -181,8 +181,12 @@ input, select, textarea { font-family: inherit; }
   position: sticky;
   top: 0;
   z-index: 30;
-  animation: ds-fade-down var(--transition) both;
   box-shadow: var(--shadow-soft);
+  animation: ds-header-enter var(--transition) both;
+}
+@keyframes ds-header-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 .ds-header-inner {
   max-width: 860px;

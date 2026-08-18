@@ -1,0 +1,42 @@
+{
+  "packageId": "com.zapnowapp.admin",
+  "host": "zapnowapp.github.io",
+  "name": "ZapNow Admin — จัดการระบบ",
+  "launcherName": "Admin",
+  "display": "standalone",
+  "themeColor": "#2563EB",
+  "themeColorDark": "#000000",
+  "navigationColor": "#000000",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#EFF6FF",
+  "enableNotifications": true,
+  "startUrl": "/ZapNow/admin.html",
+  "iconUrl": "https://zapnowapp.github.io/ZapNow/icon-admin-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "C:\\Users\\Administrator\\Desktop\\Sangkha-Platform\\sangkha-platform\\apk\\admin\\android-keystore",
+    "alias": "android"
+  },
+  "appVersionName": "1.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "unknown",
+  "webManifestUrl": "https://zapnowapp.github.io/ZapNow/manifest-admin.json",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "minSdkVersion": 21,
+  "orientation": "portrait",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "displayOverride": [],
+  "appVersion": "1.0"
+}

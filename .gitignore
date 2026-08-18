@@ -14,3 +14,22 @@ node_modules/
 # OS
 .DS_Store
 Thumbs.db
+
+# TWA/APK build artifacts (keystores + gradle build dirs)
+# -- keep twa-manifest.json + gradlew + build.gradle (checked in)
+# -- ignore keystore passwords, build outputs, Gradle cache
+apk/*/android-keystore
+apk/*/app/
+apk/*/app-release-signed.apk
+apk/*/app-release-unsigned.apk
+apk/*/app-release-bundle.aab
+apk/*/app-release-unsigned-aligned.apk
+apk/*/manifest-checksum.txt
+apk/*/build/
+apk/*/gradle/wrapper/
+
+# Gradle (system-level cache)
+.gradle/
+
+# Java
+*.class

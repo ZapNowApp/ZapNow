@@ -94,6 +94,36 @@ http://127.0.0.1:4173
 
 ---
 
+## 2.3) 📦 สร้างไฟล์ APK จริง (ติดตั้ง/แชร์เป็นไฟล์)
+
+ต้องการเครื่องมือติดตั้งครั้งเดียว:
+- **Java JDK 17** (`winget install --id Microsoft.OpenJDK.17 --scope user`)
+- **Android SDK** (build-tools 37 + platforms android-34 + cmdline-tools) — มีอยู่แล้วในเครื่อง
+- **Bubblewrap CLI** (`npm install -g @bubblewrap/cli`)
+
+**วิธีสร้าง APK (ดับเบิลคลิกปุ่มเดียว):**
+1. ดับเบิลคลิก `build-apk.bat` (ในโฟลเดอร์ `sangkha-platform`)
+2. รอประมาณ 2-3 นาทีต่อ 1 แอป (รวม ~10 นาที 4 แอป — รอบแรกช้ากว่าเพราะ download Gradle ครั้งเดียว)
+3. ไฟล์ APK อยู่ใน `apk/release/`:
+   - `ZapNow-Customer.apk` — แอปลูกค้า (ส้ม)
+   - `Sangkha-Partner.apk` — แอปร้านค้า (ชมพู)
+   - `Sangkha-Rider.apk` — แอปไรเดอร์ (ม่วง)
+   - `ZapNow-Admin.apk` — แอปแอดมิน (ฟ้า)
+
+**ติดตั้งบนมือถือ:** ส่งไฟล์ .apk ให้เพื่อน → เปิดไฟล์ → "อนุญาตให้ติดตั้ง" → ติดตั้ง
+
+**ข้อจำกัด:**
+- ต้องติดตั้งจากไฟล์ (ไม่ได้ลง Play Store) — มือถือจะเตือน "ไฟล์จากภายนอก" ต้องกดอนุญาต
+- Keystore อยู่ใน `apk/<app>/android-keystore` (รหัสผ่าน: `zapnow123`) — ถ้าจะลง Play Store จริงต้องสร้าง keystore ใหม่ที่ปลอดภัยกว่านี้
+- AAB bundle ไม่สร้างตอนนี้ (jarsigner issue ไม่สำคัญ — ใช้ APK สำหรับแจกได้เลย)
+
+**โครงสร้างไฟล์ APK (ในโฟลเดอร์ apk/):**
+- `apk/customer/` → twa-manifest.json + gradlew + build.gradle + app/src/ (+ app-release-signed.apk)
+- `apk/partner/` · `apk/rider/` · `apk/admin/` — เหมือนกัน
+- `apk/release/` — APK ที่สร้างเสร็จ (ชื่อสวย) พร้อมแจก
+
+---
+
 ## 3) วิธีดูทีละหน้า
 
 ### หน้า 1 — หน้าร้านอาหาร (ลูกค้า)

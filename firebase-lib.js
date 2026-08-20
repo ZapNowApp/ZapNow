@@ -3611,11 +3611,11 @@
     },
 
     async createAutonomousDecisionAudit(data) {
-      return await this.saveDoc("autonomousAuthorizationAudits", Date.now().toString(), { ...data, createdAt: new Date().toISOString() });
+      return await this.saveDoc("autonomousDecisionAudits", Date.now().toString(), { ...data, createdAt: new Date().toISOString() });
     },
 
     async getAutonomousDecisionHistory(uid, limit = 20) {
-      return await this.getAll("autonomousAuthorizationAudits", limit, { uid });
+      return await this.getAll("autonomousDecisionAudits", limit, { uid });
     },
 
 

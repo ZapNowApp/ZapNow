@@ -1754,6 +1754,26 @@ function getOrders() {
   return [];
 }
 
+
+// Customer order isolation bridge: return only orders belonging to active customer.
+// Keeps legacy localStorage orders and existing cust-<phone> mapping compatible.
+function getMyOrders() {
+  const orders = getOrders();
+  let phone = "";
+  try {
+    phone = String(localStorage.getItem("sangkha-customer-session") || "").replace(/\D/g, "");
+  } catch (_) {}
+
+  if (!phone) return [];
+
+  const customerId = "cust-" + phone;
+  return orders.filter((order) => {
+    if (String(order.customerId || "") === customerId) return true;
+    const orderPhone = String(order.customer && order.customer.phone || "").replace(/\D/g, "");
+    return orderPhone === phone;
+  });
+}
+
 function setOrders(orders) {
   try {
     localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));

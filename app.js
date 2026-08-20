@@ -1005,6 +1005,7 @@ let trackerSignature = ""; // กันเรนเดอร์ซ้ำเม�
 const STATUS_STEPS = [
   { key: "ใหม่", icon: "📥", label: "ได้รับออเดอร์" },
   { key: "กำลังเตรียม", icon: "👨‍🍳", label: "กำลังเตรียม" },
+  { key: "พร้อมส่ง", icon: "📦", label: "พร้อมส่ง" },
   { key: "กำลังจัดส่ง", icon: "🛵", label: "กำลังจัดส่ง" },
   { key: "เสร็จสิ้น", icon: "✅", label: "ถึงมือแล้ว" },
 ];
@@ -1054,8 +1055,8 @@ function renderOrderTracker() {
   }
 
   const rest = getRestaurant(order.restaurantId);
-  // สถานะ พร้อมส่ง = อาหารเสร็จแล้ว รอไรเดอร์ → อยู่ในขั้นเดียวกับ กำลังเตรียม
-  const STEP_INDEX = { "ใหม่": 0, "กำลังเตรียม": 1, "พร้อมส่ง": 1, "กำลังจัดส่ง": 2, "เสร็จสิ้น": 3 };
+  // สถานะ พร้อมส่ง = อาหารเสร็จแล้ว รอไรเดอร์ → แยกเป็นขั้นตอนของลูกค้า
+  const STEP_INDEX = { "ใหม่": 0, "กำลังเตรียม": 1, "พร้อมส่ง": 2, "กำลังจัดส่ง": 3, "เสร็จสิ้น": 4 };
   const stepIndex = STEP_INDEX[order.status] ?? -1;
   const done = order.status === "เสร็จสิ้น";
   const cancelled = order.status === "ยกเลิก";
@@ -1388,7 +1389,7 @@ function fmtDateTime(ts) {
 }
 
 function renderHistory() {
-  const orders = getOrders();
+  const orders = typeof getMyOrders === "function" ? getMyOrders() : getOrders();
   $("#history-list").innerHTML = orders
     .map((o) => {
       const rest = getRestaurant(o.restaurantId);

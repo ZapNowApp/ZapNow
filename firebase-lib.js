@@ -2260,12 +2260,21 @@
         resource: data.resource || null,
         action: data.action || null,
         resourceId: data.resourceId || null,
+        decisionId: data.decisionId || null,
+        correlationId: data.correlationId || null,
+        executionId: data.executionId || null,
         allowed: !!data.allowed,
+        response: data.response || null,
+        reason: data.reason || null,
         executedAt: new Date().toISOString()
       };
 
-      if (this.db && this.db.collection) {
-        await this.db.collection("securityExecutionAudits").doc(String(uid)).set(audit, { merge: true });
+      try {
+        if (this.db && this.db.collection) {
+          await this.db.collection("securityExecutionAudits").doc(String(audit.executionId || uid)).set(audit, { merge: true });
+        }
+      } catch (error) {
+        console.warn("Security execution audit failed", error);
       }
 
       return audit;
@@ -3443,6 +3452,9 @@
       }
 
       const result = {
+        decisionId: context.decisionId,
+        correlationId: context.correlationId,
+        executionId: context.executionId,
         allowed: decision === "allow" || decision === "allow_with_monitoring",
         decision,
         confidence,
@@ -3453,12 +3465,24 @@
         evaluatedAt: new Date().toISOString()
       };
 
-      await this.createAutonomousDecisionAudit({ uid, resource, action, ...result });
+      await this.createAutonomousDecisionAudit({
+        uid,
+        resource,
+        action,
+        resourceId,
+        decisionId: context.decisionId,
+        correlationId: context.correlationId,
+        executionId: context.executionId,
+        ...result
+      });
       return result;
     },
 
 
     async createAutonomousDecisionContext(uid, resource, action, resourceId) {
+      const decisionId = `decision_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+      const correlationId = `correlation_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+      const executionId = `execution_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
       const role = await this.getUserRole(uid).catch(() => "unknown");
       const permissions = await this.getUserPermissionContext(uid).catch(() => ({}));
       const behaviorProfile = await this.analyzeAuthorizationBehavior(uid).catch(() => ({}));
@@ -3468,6 +3492,9 @@
       const runtimeState = await this.getRuntimeAuthorizationHistory(uid, 5).catch(() => []);
 
       return {
+        decisionId,
+        correlationId,
+        executionId,
         uid,
         role,
         resource,
@@ -3509,19 +3536,24 @@
       };
     },
 
-    async executeAutonomousSecurityResponse(decisionContext) {
-      const decision = decisionContext.decision;
-      if (decision === "allow") return { executed: true, response: "continue", reason: "Authorized" };
-      if (decision === "allow_with_monitoring") return { executed: true, response: "increase_monitoring", reason: "Monitoring enabled" };
-      if (decision === "require_verification") {
-        await this.createAuthorizationVerificationRequest(decisionContext.uid, decisionContext.resource, decisionContext.action);
-        return { executed: true, response: "verification_required", reason: "Verification created" };
+    async executeAutonomousSecurityResponse(decisionContext = {}) {
+      const decision = decisionContext.decision || "deny";
+
+      try {
+        if (decision === "allow") return { executed: true, response: "continue", reason: "Authorized" };
+        if (decision === "allow_with_monitoring") return { executed: true, response: "increase_monitoring", reason: "Monitoring enabled" };
+        if (decision === "require_verification") {
+          await this.createAuthorizationVerificationRequest(decisionContext.uid, decisionContext.resource, decisionContext.action);
+          return { executed: true, response: "verification_required", reason: "Verification created" };
+        }
+        if (decision === "temporary_restriction") {
+          await this.createTemporaryAuthorizationRestriction(decisionContext.uid, [decisionContext.action]);
+          return { executed: true, response: "restricted", reason: "Temporary restriction created" };
+        }
+        return { executed: true, response: "blocked", reason: "Access denied" };
+      } catch (error) {
+        return { executed: false, response: "blocked", reason: "Security response failure" };
       }
-      if (decision === "temporary_restriction") {
-        await this.createTemporaryAuthorizationRestriction(decisionContext.uid, [decisionContext.action]);
-        return { executed: true, response: "restricted", reason: "Temporary restriction created" };
-      }
-      return { executed: true, response: "blocked", reason: "Access denied" };
     },
 
     async createAuthorizationVerificationRequest(uid, resource, action) {
@@ -3541,9 +3573,36 @@
     },
 
     async enforceAutonomousAuthorization(uid, resource, action, resourceId) {
-      const decision = await this.makeAutonomousAuthorizationDecision(uid, resource, action, resourceId);
-      const response = await this.executeAutonomousSecurityResponse(decision);
-      return decision.allowed ? { allowed: true, decision: decision.decision, confidence: decision.confidence, response } : { allowed: false, decision: decision.decision, reason: decision.reason };
+      try {
+        const decision = await this.makeAutonomousAuthorizationDecision(uid, resource, action, resourceId);
+        const response = await this.executeAutonomousSecurityResponse(decision);
+
+        await this.createSecurityExecutionAudit(uid, {
+          resource,
+          action,
+          resourceId,
+          decisionId: decision.decisionId,
+          correlationId: decision.correlationId,
+          executionId: decision.executionId,
+          allowed: decision.allowed,
+          response: response.response,
+          reason: decision.reason || response.reason
+        });
+
+        return decision.allowed
+          ? { allowed: true, decision: decision.decision, confidence: decision.confidence, response }
+          : { allowed: false, decision: decision.decision, reason: decision.reason, response };
+      } catch (error) {
+        await this.createSecurityExecutionAudit(uid, {
+          resource,
+          action,
+          resourceId,
+          allowed: false,
+          reason: "Authorization fail-safe denial"
+        }).catch(() => {});
+
+        return { allowed: false, decision: "deny", reason: "Authorization service unavailable" };
+      }
     },
 
     async learnFromAuthorizationDecision(uid, decision, result) {

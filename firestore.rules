@@ -129,6 +129,15 @@ service cloud.firestore {
     // orders — ลูกค้าเห็นออเดอร์ตัวเอง / ร้านเห็นออเดอร์ร้านตัวเอง
     //            ไรเดอร์เห็นงานที่รับ / admin เห็นทั้งหมด
     // ────────────────────────────────────────────────────────────────────
+
+    // Order immutable identity fields — prevent workflow actors from changing ownership references
+    function orderIdentityUnchanged() {
+      return request.resource.data.id == resource.data.id &&
+        request.resource.data.customerId == resource.data.customerId &&
+        request.resource.data.restaurantId == resource.data.restaurantId &&
+        request.resource.data.riderId == resource.data.riderId;
+    }
+
     match /orders/{orderId} {
       // อ่าน: เงื่อนไขใดเงื่อนไขหนึ่ง
       allow read: if signedIn() && (
@@ -147,15 +156,17 @@ service cloud.firestore {
       //   - ลูกค้า (ยกเลิก/แก้) / ร้าน (เปลี่ยนสถานะ) / ไรเดอร์ที่รับแล้ว (ขั้นส่ง/ส่งถึง) / แอดมิน
       //   - ไรเดอร์รับงาน (claim): ออเดอร์ที่ยังเป็น "พร้อมส่ง" → ตั้งตัวเองเป็น riderId
       //     ⚠️ กันรับซ้ำ 2 คนพร้อมกันยังต้องพึ่ง transaction ในแอป (rules ไม่ atomic ต่อการอ่าน-เขียน 2 ครั้ง)
-      allow update: if signedIn() && (
-        isAdmin() ||
-        request.auth.uid == resource.data.customerId ||                  // ลูกค้าเจ้าของออเดอร์
-        isRestaurantOwner(resource.data.restaurantId) ||                 // ร้านเจ้าของออเดอร์
-        request.auth.uid == resource.data.riderId ||                     // ไรเดอร์ที่รับงานไปแล้ว
-        (resource.data.status == 'พร้อมส่ง' &&                            // การรับงานของไรเดอร์
-         request.resource.data.riderId == request.auth.uid &&
-         request.resource.data.status == 'กำลังจัดส่ง')
-      );
+      allow update: if signedIn() &&
+        orderIdentityUnchanged() &&
+        (
+          isAdmin() ||
+          request.auth.uid == resource.data.customerId ||                  // ลูกค้าเจ้าของออเดอร์
+          isRestaurantOwner(resource.data.restaurantId) ||                 // ร้านเจ้าของออเดอร์
+          request.auth.uid == resource.data.riderId ||                     // ไรเดอร์ที่รับงานไปแล้ว
+          (resource.data.status == 'พร้อมส่ง' &&                            // การรับงานของไรเดอร์
+           request.resource.data.riderId == request.auth.uid &&
+           request.resource.data.status == 'กำลังจัดส่ง')
+        );
 
       // ลบ: แอดมินเท่านั้น (ประวัติออเดอร์เป็นหลักฐานการเงิน)
       allow delete: if isAdmin();

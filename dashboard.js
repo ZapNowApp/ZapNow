@@ -493,6 +493,9 @@ if (dashAuthorized) {
       (remote) => {
         if (!synced && fbBadge) { synced = true; fbBadge.textContent = "🔥 Firebase ซิงก์"; }
         mergeRemoteOrders(remote);
+        if (window.OrderAlertController && Array.isArray(remote)) {
+          remote.forEach((order) => window.OrderAlertController.detectNewOrder(order));
+        }
         render();
         renderCloseBar();
       },

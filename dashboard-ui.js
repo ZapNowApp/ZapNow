@@ -6,6 +6,48 @@
 const DASH_STATUSES = ["ใหม่", "กำลังเตรียม", "พร้อมส่ง", "กำลังจัดส่ง", "เสร็จสิ้น", "ยกเลิก"];
 
 /* ===== สลับหน้า (Bottom Nav) ===== */
+/* ===== Order Alert Audio Controls ===== */
+function initOrderAlertAudioControls() {
+  if (document.getElementById("order-alert-audio-controls")) return;
+
+  const panel = document.createElement("div");
+  panel.id = "order-alert-audio-controls";
+  panel.innerHTML = `
+    <button id="enable-alert-sound">Enable Sound</button>
+    <button id="mute-alert-sound">Mute</button>
+    <span id="alert-sound-indicator">🔇 Alert Sound Off</span>
+  `;
+  document.body.appendChild(panel);
+
+  const counter = document.createElement("span");
+  counter.id = "pending-alert-counter";
+  counter.textContent = "🔔 New Orders: 0";
+  panel.appendChild(counter);
+
+  setInterval(() => {
+    if (window.OrderAlertController) {
+      counter.textContent = `🔔 New Orders: ${window.OrderAlertController.getPendingAlertCount()}`;
+    }
+  }, 1000);
+
+  const indicator = document.getElementById("alert-sound-indicator");
+  document.getElementById("enable-alert-sound").addEventListener("click", () => {
+    if (window.OrderAlertController) {
+      window.OrderAlertController.toggleAlertSound(true);
+      indicator.textContent = "🔔 Alert Sound Enabled";
+    }
+  });
+
+  document.getElementById("mute-alert-sound").addEventListener("click", () => {
+    if (window.OrderAlertController) {
+      window.OrderAlertController.toggleAlertSound(false);
+      indicator.textContent = "🔇 Alert Sound Muted";
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", initOrderAlertAudioControls);
+
 function switchPage(name) {
   $$(".page").forEach((p) => p.classList.toggle("active", p.id === "page-" + name));
   $$(".ds-bottom-nav-item").forEach((b) => b.classList.toggle("active", b.dataset.page === name));
@@ -286,6 +328,9 @@ function showNewOrderPopup(o) {
   el.querySelector(".nop-close").addEventListener("click", () => dismissNewOrderPopup(el));
   el.querySelector(".nop-accept").addEventListener("click", () => {
     updateOrderStatus(o.id, "กำลังเตรียม"); // เดียวกับปุ่ม "✅ รับออเดอร์" ในหน้างาน
+    if (window.OrderAlertController) {
+      window.OrderAlertController.stopOrderAlert(o.id);
+    }
     showToast(`✅ รับออเดอร์ #${o.id} แล้ว`);
     dismissNewOrderPopup(el);
     refreshUI();

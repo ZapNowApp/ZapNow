@@ -865,7 +865,7 @@ $("#rider-list").addEventListener("click", (e) => {
       nameInput.focus();
       return;
     }
-    const taken = assignRider(id, profile);
+    const taken = claimDeliveryOrder(id, profile.id);
     if (!taken) {
       // งานถูกไรเดอร์คนอื่นรับไปก่อน (รับพร้อมกัน) → บอกว่าใครรับไปแล้ว
       const now = getOrders().find((o) => o.id === id);
@@ -875,16 +875,16 @@ $("#rider-list").addEventListener("click", (e) => {
     }
     showToast(`🛵 รับงาน #${id} แล้ว — ไปรับอาหารที่ ${getRestaurant(taken.restaurantId).name}`);
   } else if (action === "arrived") {
-    setRiderStage(id, "ถึงร้านแล้ว");
+    setRiderStage(id, "ถึงร้านแล้ว", profile && profile.id);
     showToast(`🏪 ถึงร้านแล้ว — รับอาหารออเดอร์ #${id}`);
   } else if (action === "depart") {
-    setRiderStage(id, "กำลังไปส่ง");
+    setRiderStage(id, "กำลังไปส่ง", profile && profile.id);
     showToast(`🛵 เริ่มไปส่งออเดอร์ #${id} — ลูกค้าเห็นตำแหน่งบนแผนที่แล้ว`);
   } else if (action === "map") {
     openRiderMap(order, btn.dataset.mapMode);
   } else if (action === "deliver") {
     if (!confirm(`ยืนยันว่าส่งออเดอร์ #${id} ถึงลูกค้าแล้ว?`)) return;
-    completeDelivery(id);
+    completeDelivery(id, profile && profile.id);
     showToast(`✅ ส่งออเดอร์ #${id} ถึงลูกค้าแล้ว — ได้ ${fmt(order.delivery)}`);
   } else if (action === "release") {
     if (!confirm(`คืนงาน #${id} กลับไปที่รายการรอรับ?`)) return;

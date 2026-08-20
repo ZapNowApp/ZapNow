@@ -1660,11 +1660,40 @@ function assignRider(orderId, rider) {
   return o;
 }
 
+
+// Controlled rider claim layer: only available "พร้อมส่ง" orders can be claimed once.
+function validateRiderAssignment(orderId, riderId) {
+  const order = getOrders().find((o) => o.id === orderId);
+  if (!order) return false;
+  if (order.status !== "พร้อมส่ง") return false;
+  if (order.riderId && String(order.riderId) !== String(riderId)) return false;
+  return true;
+}
+
+function claimDeliveryOrder(orderId, riderId) {
+  const orders = getOrders();
+  const order = orders.find((o) => o.id === orderId);
+  if (!order || !validateRiderAssignment(orderId, riderId)) return null;
+
+  order.status = "กำลังจัดส่ง";
+  order.riderId = riderId;
+  order.pickedUpAt = Date.now();
+  order.riderStage = "ไปรับอาหาร";
+
+  setOrders(orders);
+  fbMirror(() => window.FirebaseOrders.saveOrder(order));
+  return order;
+}
+
 // ไรเดอร์กดอัปเดตขั้น: ไปรับอาหาร → ถึงร้านแล้ว → กำลังไปส่ง (เริ่มนับเวลาเดินทางเมื่อกำลังไปส่ง)
-function setRiderStage(orderId, stage) {
+function setRiderStage(orderId, stage, riderId = null) {
   const orders = getOrders();
   const o = orders.find((x) => x.id === orderId);
   if (!o || o.status !== "กำลังจัดส่ง") return null;
+  if (riderId !== null && String(o.riderId) !== String(riderId)) {
+    console.warn("Blocked rider stage update", { orderId, riderId, owner: o.riderId });
+    return null;
+  }
   o.riderStage = stage;
   if (stage === "กำลังไปส่ง") o.departedAt = Date.now();
   setOrders(orders);
@@ -1718,10 +1747,14 @@ function assignNearestRider(orderId) {
 }
 
 // ไรเดอร์ส่งถึงแล้ว: กำลังจัดส่ง → เสร็จสิ้น
-function completeDelivery(orderId) {
+function completeDelivery(orderId, riderId = null) {
   const orders = getOrders();
   const o = orders.find((x) => x.id === orderId);
   if (!o || o.status !== "กำลังจัดส่ง") return null;
+  if (riderId !== null && String(o.riderId) !== String(riderId)) {
+    console.warn("Blocked rider completion", { orderId, riderId, owner: o.riderId });
+    return null;
+  }
   o.status = "เสร็จสิ้น";
   o.deliveredAt = Date.now();
   setOrders(orders);

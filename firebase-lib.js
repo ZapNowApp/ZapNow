@@ -2040,6 +2040,92 @@
       };
     },
 
+
+    /**
+     * PHASE 2.2: Workflow Authorization Enforcement Bridge
+     * Controlled authorization path:
+     * Firebase UID -> Mapping -> Legacy Identity -> Workflow Permission
+     */
+    async getAuthenticatedIdentity() {
+      const authUser = this.getAuthUser ? this.getAuthUser() : (this.auth ? this.auth.currentUser : null);
+      if (!authUser) {
+        return { authenticated: false, firebaseUid: null };
+      }
+
+      const resolved = await this.resolveLegacyIdentity(authUser.uid);
+      return {
+        authenticated: true,
+        firebaseUid: authUser.uid,
+        ...resolved
+      };
+    },
+
+    async resolveLegacyIdentity(firebaseUid) {
+      if (!firebaseUid || !this.db) {
+        return { legacyId: null, role: null };
+      }
+
+      try {
+        const mapping = await this.db.collection("uidMappings").doc(String(firebaseUid)).get();
+        if (mapping.exists) {
+          const data = mapping.data() || {};
+          return {
+            legacyId: data.legacyId || data.customerId || data.restaurantId || data.riderId || null,
+            customerId: data.customerId || null,
+            restaurantId: data.restaurantId || null,
+            riderId: data.riderId || null,
+            role: data.role || null
+          };
+        }
+      } catch (error) {
+        console.warn("resolveLegacyIdentity failed:", error);
+      }
+
+      return { legacyId: null, role: null };
+    },
+
+    async validateUserOwnership(firebaseUid, resourceType, resource) {
+      const identity = await this.resolveLegacyIdentity(firebaseUid);
+      const value = resource || {};
+      let allowed = false;
+
+      if (resourceType === "order") {
+        if (identity.role === "customer") allowed = String(value.customerId) === String(identity.customerId || identity.legacyId);
+        if (identity.role === "restaurant") allowed = String(value.restaurantId) === String(identity.restaurantId || identity.legacyId);
+        if (identity.role === "rider") allowed = String(value.riderId) === String(identity.riderId || identity.legacyId);
+      }
+
+      return {
+        allowed,
+        firebaseUid,
+        resourceType,
+        reason: allowed ? "ownership_verified" : "ownership_denied"
+      };
+    },
+
+    async validateRolePermission(firebaseUid, resource, action) {
+      return this.validatePermission(firebaseUid, resource, action);
+    },
+
+    async authorizeWorkflowAction(context = {}) {
+      const uid = context.firebaseUid || context.uid;
+      const permission = await this.validateRolePermission(uid, context.resource, context.action);
+      if (!permission.allowed) return { allowed: false, reason: "permission_denied" };
+
+      if (context.resourceData && context.resourceType) {
+        const ownership = await this.validateUserOwnership(uid, context.resourceType, context.resourceData);
+        if (!ownership.allowed) return ownership;
+      }
+
+      return {
+        allowed: true,
+        uid,
+        action: context.action,
+        resource: context.resource,
+        reason: "workflow_authorized"
+      };
+    },
+
     async createAuthorizationAudit(uid, data = {}) {
       const roleData = await this.getUserRole(uid);
       const audit = {
@@ -3992,6 +4078,58 @@
         recommendation: doc.data().recommendation,
         timestamp: doc.data().createdAt
       }));
+    },
+
+    // PHASE 2.1: Firebase Identity Bridge Hardening
+    // Controlled bridge: Firebase UID -> legacy identity -> existing workflow
+    async getCurrentFirebaseUser() {
+      if (!ready || !auth) return null;
+      return auth.currentUser || null;
+    },
+
+    async resolveUserIdentity(firebaseUid = null) {
+      const user = await this.getCurrentFirebaseUser();
+      const uid = firebaseUid || (user && user.uid);
+      if (!uid || !ready) return null;
+
+      try {
+        const snap = await db.collection("uidMappings").doc(String(uid)).get();
+        if (!snap.exists) return null;
+        const data = snap.data();
+        return {
+          firebaseUid: String(uid),
+          legacyId: data.legacyId || data.customerId || data.restaurantId || data.riderId || null,
+          role: data.role || null,
+          ...data
+        };
+      } catch (error) {
+        console.warn("resolveUserIdentity failed:", error);
+        return null;
+      }
+    },
+
+    async validateIdentityMapping(firebaseUid, legacyId, role) {
+      const identity = await this.resolveUserIdentity(firebaseUid);
+      if (!identity) return false;
+      if (role && identity.role !== role) return false;
+      return String(identity.legacyId) === String(legacyId);
+    },
+
+    async requireFirebaseIdentity(role = null) {
+      const identity = await this.resolveUserIdentity();
+      if (!identity) {
+        throw new Error("Firebase identity mapping required");
+      }
+      if (role && identity.role !== role) {
+        throw new Error("Invalid identity role");
+      }
+      return identity;
+    },
+
+    async canAccessLegacyIdentity(legacyId, role) {
+      const identity = await this.resolveUserIdentity();
+      if (!identity) return false;
+      return identity.role === role && String(identity.legacyId) === String(legacyId);
     },
 
     signOut() {

@@ -3723,6 +3723,67 @@
         .slice(0, limit);
     },
 
+    async validateSecurityAdminAccess(uid) {
+      if (!uid) {
+        return {
+          allowed: false,
+          reason: "Missing Firebase UID"
+        };
+      }
+
+      try {
+        const role = await this.getUserRole(uid);
+        const allowed = role === "admin";
+
+        return {
+          allowed,
+          uid,
+          role: role || null,
+          reason: allowed ? "Admin access verified" : "Admin permission required"
+        };
+      } catch (error) {
+        return {
+          allowed: false,
+          uid,
+          role: null,
+          reason: error.message || "Security admin validation failed"
+        };
+      }
+    },
+
+    async getSecurityHealth() {
+      try {
+        const intelligence = await this.evaluateSecurityIntelligence();
+
+        return {
+          status: "available",
+          posture: intelligence || null,
+          generatedAt: new Date().toISOString()
+        };
+      } catch (error) {
+        return {
+          status: "degraded",
+          posture: null,
+          error: error.message || "Security health evaluation failed",
+          generatedAt: new Date().toISOString()
+        };
+      }
+    },
+
+    async getSecurityDashboardSummary(options = {}) {
+      const metrics = await this.getSecurityMetrics();
+      const threats = await this.analyzeSecurityThreats();
+      const health = await this.getSecurityHealth();
+
+      return {
+        metrics,
+        threats,
+        health,
+        options,
+        generatedAt: new Date().toISOString()
+      };
+    },
+
     async analyzeSecurityThreats() {
       const timeline = await this.getSecurityTimeline(1000);
       const deniedActions = {};

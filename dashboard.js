@@ -341,14 +341,14 @@ $("#order-list").addEventListener("click", (e) => {
   const action = btn.dataset.action;
   if (action === "cancel") {
     if (!confirm(`ยกเลิกออเดอร์ #${id} ของ ${order.customer.name}?`)) return;
-    updateOrderStatus(id, "ยกเลิก");
+    updateOrderStatus(id, "ยกเลิก", restaurantId);
     showToast(`✖️ ยกเลิกออเดอร์ #${id} แล้ว`);
   } else if (action === "delete") {
     deleteOrder(id);
     showToast(`🗑️ ลบออเดอร์ #${id} แล้ว`);
   } else {
     const next = ORDER_ACTION_NEXT[action];
-    updateOrderStatus(id, next);
+    updateOrderStatus(id, next, restaurantId);
     let msg = { accept: "✅ รับออเดอร์", ship: "🛵 เริ่มจัดส่งแล้ว", done: "🎉 ออเดอร์เสร็จสิ้น" }[action] || "";
     if (action === "ready") {
       // พร้อมส่งแล้ว → ระบบจัดไรเดอร์ว่าง/ใกล้สุดให้อัตโนมัติ (ถ้าไม่มีว่าง คงเป็น พร้อมส่ง ใน pool)

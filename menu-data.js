@@ -2245,10 +2245,17 @@ function addOrder(order) {
   return newOrder;
 }
 
-function updateOrderStatus(id, status) {
+function updateOrderStatus(id, status, restaurantId = null) {
   const orders = getOrders();
   const order = orders.find((o) => o.id === id);
   if (!order) return null;
+
+  // 🔒 Restaurant ownership validation: ร้านแก้ไขได้เฉพาะออเดอร์ของตัวเอง
+  if (restaurantId !== null && String(order.restaurantId) !== String(restaurantId)) {
+    console.warn("Blocked restaurant order status update", { id, restaurantId, owner: order.restaurantId });
+    return null;
+  }
+
   order.status = status;
   setOrders(orders);
   fbMirror(() => window.FirebaseOrders.saveOrder(order)); // 🔥 อัปเดต Firestore (ส่งทั้งตัว กัน field หาย)

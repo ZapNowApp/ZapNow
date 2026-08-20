@@ -179,5 +179,25 @@ service cloud.firestore {
       // ลบ: แอดมินเท่านั้น
       allow delete: if isAdmin();
     }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Security Audit Collections — backend/service controlled only
+    // Client must never create, update, or delete audit records.
+    // Admin can read audit trails for security review.
+    // ────────────────────────────────────────────────────────────────────
+    match /securityExecutionAudits/{executionId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /authorizationEvents/{eventId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /autonomousDecisionAudits/{decisionId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
   }
 }

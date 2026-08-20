@@ -3615,7 +3615,23 @@
     },
 
 
-    async getSecurityMetrics() {
+    normalizeSecurityQueryOptions(options = {}) {
+      if (typeof options === "number") {
+        return { limit: options };
+      }
+
+      return {
+        limit: Number(options.limit || 50),
+        startTime: options.startTime || null,
+        endTime: options.endTime || null,
+        resource: options.resource || null,
+        action: options.action || null,
+        severity: options.severity || null
+      };
+    },
+
+    async getSecurityMetrics(options = {}) {
+      const query = this.normalizeSecurityQueryOptions(options);
       const collections = [
         "securityExecutionAudits",
         "authorizationEvents",
@@ -3628,13 +3644,7 @@
         deniedCount: 0,
         blockedCount: 0,
         threatDistribution: { low: 0, medium: 0, high: 0, critical: 0 },
-        responseDistribution: {
-          continue: 0,
-          monitoring: 0,
-          verification: 0,
-          restriction: 0,
-          blocked: 0
-        },
+        responseDistribution: { continue: 0, monitoring: 0, verification: 0, restriction: 0, blocked: 0 },
         resourceActivity: {},
         actionActivity: {},
         failureRate: 0,
@@ -3644,36 +3654,37 @@
       let failedResponses = 0;
       let totalResponses = 0;
 
+      const matchesFilter = item => {
+        const timestamp = item.executedAt || item.createdAt || item.timestamp;
+        const date = timestamp ? new Date(timestamp) : null;
+        if (query.startTime && (!date || date < new Date(query.startTime))) return false;
+        if (query.endTime && (!date || date > new Date(query.endTime))) return false;
+        if (query.resource && item.resource !== query.resource) return false;
+        if (query.action && item.action !== query.action) return false;
+        if (query.severity && (item.threatLevel || item.severity) !== query.severity) return false;
+        return true;
+      };
+
       try {
         for (const collectionName of collections) {
           const snapshot = await this.db.collection(collectionName).get();
-
           snapshot.forEach(doc => {
             const item = doc.data() || {};
-            metrics.totalDecisions++;
+            if (!matchesFilter(item)) return;
 
+            metrics.totalDecisions++;
             const decision = item.decision || (item.allowed === true ? "allowed" : null);
             if (decision === "allowed" || item.allowed === true) metrics.allowedCount++;
             if (decision === "denied" || item.allowed === false) metrics.deniedCount++;
             if (decision === "blocked" || item.response === "blocked") metrics.blockedCount++;
 
             const threat = item.threatLevel || "low";
-            if (metrics.threatDistribution[threat] !== undefined) {
-              metrics.threatDistribution[threat]++;
-            }
+            if (metrics.threatDistribution[threat] !== undefined) metrics.threatDistribution[threat]++;
 
             const response = item.response;
-            if (response && metrics.responseDistribution[response] !== undefined) {
-              metrics.responseDistribution[response]++;
-            }
-
-            if (item.resource) {
-              metrics.resourceActivity[item.resource] = (metrics.resourceActivity[item.resource] || 0) + 1;
-            }
-
-            if (item.action) {
-              metrics.actionActivity[item.action] = (metrics.actionActivity[item.action] || 0) + 1;
-            }
+            if (response && metrics.responseDistribution[response] !== undefined) metrics.responseDistribution[response]++;
+            if (item.resource) metrics.resourceActivity[item.resource] = (metrics.resourceActivity[item.resource] || 0) + 1;
+            if (item.action) metrics.actionActivity[item.action] = (metrics.actionActivity[item.action] || 0) + 1;
 
             if (response) {
               totalResponses++;
@@ -3690,15 +3701,28 @@
       return metrics;
     },
 
-    async getSecurityTimeline(limit = 50) {
+    async getSecurityTimeline(options = 50) {
+      const query = this.normalizeSecurityQueryOptions(options);
       const timeline = [];
       const sources = ["securityExecutionAudits", "autonomousDecisionAudits"];
+
+      const matchesFilter = item => {
+        const timestamp = item.executedAt || item.createdAt || item.timestamp;
+        const date = timestamp ? new Date(timestamp) : null;
+        if (query.startTime && (!date || date < new Date(query.startTime))) return false;
+        if (query.endTime && (!date || date > new Date(query.endTime))) return false;
+        if (query.resource && item.resource !== query.resource) return false;
+        if (query.action && item.action !== query.action) return false;
+        if (query.severity && (item.threatLevel || item.severity) !== query.severity) return false;
+        return true;
+      };
 
       try {
         for (const source of sources) {
           const snapshot = await this.db.collection(source).get();
           snapshot.forEach(doc => {
             const item = doc.data() || {};
+            if (!matchesFilter(item)) return;
             timeline.push({
               decisionId: item.decisionId || null,
               correlationId: item.correlationId || null,
@@ -3720,7 +3744,7 @@
 
       return timeline
         .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
-        .slice(0, limit);
+        .slice(0, query.limit);
     },
 
     async validateSecurityAdminAccess(uid) {
@@ -3771,8 +3795,8 @@
     },
 
     async getSecurityDashboardSummary(options = {}) {
-      const metrics = await this.getSecurityMetrics();
-      const threats = await this.analyzeSecurityThreats();
+      const metrics = await this.getSecurityMetrics(options);
+      const threats = await this.analyzeSecurityThreats(options);
       const health = await this.getSecurityHealth();
 
       return {
@@ -3784,21 +3808,32 @@
       };
     },
 
-    async analyzeSecurityThreats() {
-      const timeline = await this.getSecurityTimeline(1000);
+    async analyzeSecurityThreats(options = {}) {
+      const timeline = await this.getSecurityTimeline(options);
       const deniedActions = {};
+      const threatFrequency = {};
+      const resourceFrequency = {};
+      const actionFrequency = {};
 
       timeline.forEach(item => {
+        const threat = item.threatLevel || "unknown";
+        threatFrequency[threat] = (threatFrequency[threat] || 0) + 1;
+
+        const resource = item.resource || "unknown";
+        resourceFrequency[resource] = (resourceFrequency[resource] || 0) + 1;
+
+        const action = item.action || "unknown";
+        actionFrequency[action] = (actionFrequency[action] || 0) + 1;
+
         if (item.decision === "denied" || item.response === "blocked") {
-          const key = `${item.resource || "unknown"}:${item.action || "unknown"}`;
+          const key = `${resource}:${action}`;
           deniedActions[key] = (deniedActions[key] || 0) + 1;
         }
       });
 
       const criticalCount = timeline.filter(item => item.threatLevel === "critical").length;
-      const highRiskCount = timeline.filter(item =>
-        item.threatLevel === "high" || Number(item.riskScore || 0) >= 80
-      ).length;
+      const highRiskCount = timeline.filter(item => item.threatLevel === "high" || Number(item.riskScore || 0) >= 80).length;
+      const riskTrendDirection = highRiskCount > (timeline.length / 2) ? "increasing" : "stable";
 
       return {
         threatLevelSummary: {
@@ -3807,10 +3842,14 @@
           total: timeline.length
         },
         riskTrend: {
-          highRiskFrequency: timeline.length ? highRiskCount / timeline.length : 0
+          highRiskFrequency: timeline.length ? highRiskCount / timeline.length : 0,
+          direction: riskTrendDirection
         },
         suspiciousPatterns: {
-          repeatedDeniedActions: deniedActions
+          repeatedDeniedActions: deniedActions,
+          threatFrequency,
+          resourceFrequency,
+          actionFrequency
         },
         recommendations: [
           "Review repeated denied authorization patterns",
